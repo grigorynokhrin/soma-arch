@@ -228,7 +228,7 @@ For runtime changes, Codex should provide commands but not assume they were exec
     docs/CURRENT_STATE.md
     docs/DECISIONS.md
 
-## Good first Codex prompt  
+## Good first Codex prompt
 
     Read AGENTS.md, docs/CODEX_HANDOFF.md, and docs/PROJECT_PHASE_1_STATUS.md.
 
