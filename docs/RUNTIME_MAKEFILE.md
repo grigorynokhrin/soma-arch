@@ -64,6 +64,57 @@ Purpose:
 
 Show available runtime commands.
 
+### `make health`
+
+Purpose:
+
+Run the read-only soma runtime healthcheck.
+
+Implementation:
+
+    /srv/soma/scripts/healthcheck.sh
+
+Source script template:
+
+    runtime/scripts/healthcheck.sh
+
+Server runtime script:
+
+    /srv/soma/scripts/healthcheck.sh
+
+Safety:
+
+This command is read-only.
+
+It does not intentionally:
+
+- start containers
+- stop containers
+- restart containers
+- modify Caddy
+- modify Docker Compose
+- modify routes
+- modify files in `~/myservices`
+- delete files
+
+Verified result:
+
+    [OK] healthcheck completed without hard failures
+
+Required legacy containers verified:
+
+    myservices-caddy
+    myservices-home
+    myservices-whisper
+
+Whisper health endpoint verified:
+
+    http://127.0.0.1/myservices/whisper/healthz
+
+Observed response:
+
+    ok
+
 ### `make status`
 
 Purpose:
