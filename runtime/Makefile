@@ -1,4 +1,4 @@
-.PHONY: help status legacy-status tree
+.PHONY: help status legacy-status tree health
 
 SOMA_RUNTIME_ROOT ?= /srv/soma
 SOMA_LEGACY_ROOT ?= /home/grigorynokhrin/myservices
@@ -11,6 +11,7 @@ help:
 	@echo "  make status         Show soma paths and Docker status"
 	@echo "  make legacy-status Show legacy myservices Compose status"
 	@echo "  make tree           Show /srv/soma directory tree"
+	@echo "  make health         Run read-only soma healthcheck"
 
 status:
 	@echo "=== soma paths ==="
@@ -37,3 +38,6 @@ legacy-status:
 tree:
 	@echo "=== /srv/soma tree ==="
 	@find "$(SOMA_RUNTIME_ROOT)" -maxdepth 3 -type d | sort
+
+health:
+	@"$(SOMA_RUNTIME_ROOT)/scripts/healthcheck.sh"
