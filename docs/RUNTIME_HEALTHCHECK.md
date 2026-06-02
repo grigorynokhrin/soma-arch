@@ -138,3 +138,79 @@ That change should first be made in the Git-tracked template:
 and then synced to:
 
     /srv/soma/Makefile
+
+## Optional dev services
+
+As of commit:
+
+    0583758 add optional whisper dev healthcheck
+
+The runtime healthcheck includes an optional dev-service section.
+
+Runtime script:
+
+    /srv/soma/scripts/healthcheck.sh
+
+Repo template:
+
+    runtime/scripts/healthcheck.sh
+
+Section name:
+
+    optional soma dev services
+
+Currently checked optional dev container:
+
+    soma-whisper-dev
+
+Currently checked optional dev endpoint:
+
+    http://127.0.0.1:18080/whisper-dev/healthz
+
+## Healthcheck behavior
+
+Required legacy checks remain hard checks.
+
+Required legacy containers:
+
+    myservices-caddy
+    myservices-home
+    myservices-whisper
+
+Required legacy health endpoint:
+
+    http://127.0.0.1/myservices/whisper/healthz
+
+If a required legacy container is missing, the healthcheck records a hard failure.
+
+If the optional dev container is missing, the healthcheck records a warning only:
+
+    [WARN] optional dev container not running: soma-whisper-dev
+
+If the optional dev endpoint does not respond, the healthcheck records a warning only:
+
+    [WARN] optional dev whisper health endpoint did not respond successfully
+
+The optional dev section must not make legacy health fail.
+
+## Verified output
+
+With `soma-whisper-dev` running, the healthcheck showed:
+
+    === optional soma dev services ===
+    [OK] optional dev container running: soma-whisper-dev
+    [OK] optional dev whisper health endpoint responded
+    ok
+
+The final summary remained successful:
+
+    === summary ===
+    [OK] healthcheck completed without hard failures
+
+## Design rule
+
+Dev services may be added to healthcheck output for visibility.
+
+Dev services must not become required production dependencies until explicitly promoted.
+
+Promotion requires a separate documented migration step.
