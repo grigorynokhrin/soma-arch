@@ -269,7 +269,7 @@ Do not hide uncertainty. If something was not tested, say so.
 
 A task is done when:
 
-- source/config changes are in Git
+- source/config changes are in Git 
 - docs are updated
 - repo status is clean
 - relevant compose config validates
