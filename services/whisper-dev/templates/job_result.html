@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>{{ title }}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      max-width: 980px;
+      margin: 40px auto;
+      padding: 0 16px;
+      line-height: 1.5;
+      background: #fafafa;
+      color: #111;
+    }
+    .card {
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 14px;
+      padding: 18px;
+      margin-bottom: 18px;
+    }
+    textarea {
+      width: 100%;
+      min-height: 420px;
+      box-sizing: border-box;
+      padding: 12px;
+      font-family: inherit;
+    }
+    a { text-decoration: none; }
+    .mono {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      word-break: break-word;
+    }
+  </style>
+</head>
+<body>
+  <h1>Whisper result</h1>
+
+  <div class="card">
+    <div><strong>Job ID:</strong> <span class="mono">{{ job.job_id }}</span></div>
+    <div><strong>Файл:</strong> {{ job.filename }}</div>
+    <div><strong>Модель:</strong> {{ job.model_name }}</div>
+    <div><strong>Compute:</strong> {{ job.used_compute or job.compute_type }}</div>
+    <div><strong>Chunk:</strong> {{ job.chunk_min }} мин</div>
+    <div><strong>Overlap:</strong> {{ job.overlap_sec }} сек</div>
+    <div><strong>Контекст:</strong> {{ job.context_preset or "none" }}</div>
+    <div><strong>Текст контекста:</strong></div>
+    <div class="mono">{{ job.transcription_context or "—" }}</div>
+    <div><strong>Чанков:</strong> {{ job.chunks_count or "—" }}</div>
+    <div><strong>TXT:</strong>
+      {% if job.txt_file %}
+        <a href="/myservices/whisper/jobs/{{ job.job_id }}/artifacts/{{ job.txt_file }}" target="_blank">{{ job.txt_file }}</a>
+      {% else %}—{% endif %}
+    </div>
+    <div><strong>SRT:</strong>
+      {% if job.srt_file %}
+        <a href="/myservices/whisper/jobs/{{ job.job_id }}/artifacts/{{ job.srt_file }}" target="_blank">{{ job.srt_file }}</a>
+      {% else %}—{% endif %}
+    </div>
+  </div>
+
+  <div class="card">
+    <label for="result_text"><strong>Результат</strong></label>
+    <textarea id="result_text" readonly>{{ job.result_text or '' }}</textarea>
+  </div>
+
+  <div class="card">
+    <a href="/myservices/whisper/jobs/{{ job.job_id }}">← Назад к статусу job</a>
+  </div>
+
+  <div class="card">
+    <a href="/myservices/whisper/">← Назад в Whisper</a>
+  </div>
+</body>
+</html>

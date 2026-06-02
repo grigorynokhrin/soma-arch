@@ -1,0 +1,27 @@
+services:
+  whisper-dev:
+    container_name: soma-whisper-dev
+    image: soma-whisper-dev:local
+    build:
+      context: ../services/whisper-dev
+      dockerfile: Dockerfile
+      args:
+        APP_UID: "1000"
+        APP_GID: "990"
+    environment:
+      TZ: America/Chicago
+      WHISPER_ROOT_PATH: /whisper-dev
+      WHISPER_OUTPUT_DIR: /app/outputs
+      WHISPER_JOBS_DIR: /app/data/jobs
+      WHISPER_CONTEXTS_PATH: /app/contexts.json
+      WHISPER_RETENTION_MAX_JOBS: "5"
+      HF_HOME: /app/hf_cache
+      HUGGINGFACE_HUB_CACHE: /app/hf_cache/hub
+    volumes:
+      - /srv/soma/data/whisper-dev/jobs:/app/data/jobs
+      - /srv/soma/data/whisper-dev/outputs:/app/outputs
+      - /srv/soma/data/whisper-dev/hf_cache:/app/hf_cache
+    ports:
+      - "127.0.0.1:18080:8000"
+    gpus: all
+    restart: unless-stopped

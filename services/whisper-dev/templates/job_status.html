@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>{{ title }}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      max-width: 980px;
+      margin: 40px auto;
+      padding: 0 16px;
+      line-height: 1.5;
+      background: #fafafa;
+      color: #111;
+    }
+    .card {
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 14px;
+      padding: 18px;
+      margin-bottom: 18px;
+    }
+    .muted { color: #666; }
+    .mono {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .bar {
+      width: 100%;
+      height: 16px;
+      background: #eee;
+      border-radius: 999px;
+      overflow: hidden;
+      margin: 10px 0 6px;
+    }
+    .fill {
+      height: 100%;
+      background: #222;
+      width: 0%;
+      transition: width 0.35s ease;
+    }
+    .ok { color: #146c2e; }
+    .err { color: #9b1c1c; }
+    a { text-decoration: none; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <h1>Whisper job</h1>
+
+  <div class="card">
+    <div><strong>Job ID:</strong> <span class="mono" id="job_id">{{ job.job_id }}</span></div>
+    <div><strong>Файл:</strong> <span id="filename">{{ job.filename }}</span></div>
+    <div><strong>Статус:</strong> <span id="status" class="{% if job.status == 'done' %}ok{% elif job.status == 'error' %}err{% endif %}">{{ job.status }}</span></div>
+    <div><strong>Stage:</strong> <span id="stage">{{ job.stage }}</span></div>
+    <div><strong>Started:</strong> <span id="started_at">{{ job.started_at }}</span></div>
+    <div><strong>Finished:</strong> <span id="finished_at">{{ job.finished_at or "—" }}</span></div>
+    <div><strong>Model:</strong> <span id="model_name">{{ job.model_name }}</span></div>
+    <div><strong>Compute:</strong> <span id="compute_line">{{ job.compute_type }}{% if job.used_compute %} → {{ job.used_compute }}{% endif %}</span></div>
+    <div><strong>Chunk:</strong> <span id="chunk_min">{{ job.chunk_min }}</span> мин</div>
+    <div><strong>Overlap:</strong> <span id="overlap_sec">{{ job.overlap_sec }}</span> сек</div>
+    <div><strong>VAD:</strong> <span id="vad">{{ "on" if job.vad else "off" }}</span></div>
+  </div>
+
+  <div class="card">
+    <div><strong>Контекст:</strong> <span id="context_preset">{{ job.context_preset or "none" }}</span></div>
+    <div class="mono muted" id="context_text">{{ job.transcription_context or "—" }}</div>
+  </div>
+
+  <div class="card">
+    <div><strong>Прогресс:</strong> <span id="progress_line">{{ job.progress_current }}</span> / <span id="progress_total">{{ job.progress_total }}</span></div>
+    {% set pct = 0 %}
+    {% if job.progress_total and job.progress_total > 0 %}
+      {% set pct = (job.progress_current * 100 / job.progress_total) | int %}
+    {% endif %}
+    <div class="bar">
+      <div class="fill" id="progress_fill" style="width: {{ pct }}%;"></div>
+    </div>
+    <div class="muted"><span id="progress_pct">{{ pct }}</span>%</div>
+  </div>
+
+  <div class="card {% if not job.error %}hidden{% endif %}" id="error_card">
+    <strong class="err">Ошибка:</strong><br>
+    <span class="mono err" id="error_text">{{ job.error or "" }}</span>
+  </div>
+
+  <div class="card" id="action_card">
+    {% if job.status == "done" %}
+      <a id="result_link" href="/myservices/whisper/jobs/{{ job.job_id }}/result">Открыть результат →</a>
+      <span id="running_hint" class="muted hidden">Идёт обработка…</span>
+      <span id="error_hint" class="err hidden">Job завершился с ошибкой.</span>
+    {% elif job.status == "error" %}
+      <a id="result_link" class="hidden" href="#">Открыть результат →</a>
+      <span id="running_hint" class="muted hidden">Идёт обработка…</span>
+      <span id="error_hint" class="err">Job завершился с ошибкой.</span>
+    {% else %}
+      <a id="result_link" class="hidden" href="#">Открыть результат →</a>
+      <span id="running_hint" class="muted">Идёт обработка…</span>
+      <span id="error_hint" class="err hidden">Job завершился с ошибкой.</span>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <a href="/myservices/whisper/">← Назад в Whisper</a>
+  </div>
+
+  <script>
+    const jobId = {{ job.job_id|tojson }};
+    const statusUrl = `/myservices/whisper/jobs/${jobId}/status.json`;
+    const resultUrl = `/myservices/whisper/jobs/${jobId}/result`;
+
+    const els = {
+      status: document.getElementById('status'),
+      stage: document.getElementById('stage'),
+      finishedAt: document.getElementById('finished_at'),
+      computeLine: document.getElementById('compute_line'),
+      progressLine: document.getElementById('progress_line'),
+      progressTotal: document.getElementById('progress_total'),
+      progressFill: document.getElementById('progress_fill'),
+      progressPct: document.getElementById('progress_pct'),
+      errorCard: document.getElementById('error_card'),
+      errorText: document.getElementById('error_text'),
+      resultLink: document.getElementById('result_link'),
+      runningHint: document.getElementById('running_hint'),
+      errorHint: document.getElementById('error_hint'),
+    };
+
+    let pollTimer = null;
+
+    function setClassByStatus(status) {
+      els.status.classList.remove('ok', 'err');
+      if (status === 'done') els.status.classList.add('ok');
+      if (status === 'error') els.status.classList.add('err');
+    }
+
+    function show(el) {
+      el.classList.remove('hidden');
+    }
+
+    function hide(el) {
+      el.classList.add('hidden');
+    }
+
+    function renderJob(job) {
+      els.status.textContent = job.status || '—';
+      els.stage.textContent = job.stage || '—';
+      els.finishedAt.textContent = job.finished_at || '—';
+      els.computeLine.textContent = job.used_compute ? `${job.compute_type} → ${job.used_compute}` : (job.compute_type || '—');
+      els.progressLine.textContent = job.progress_current ?? 0;
+      els.progressTotal.textContent = job.progress_total ?? 0;
+
+      const total = Number(job.progress_total || 0);
+      const current = Number(job.progress_current || 0);
+      const pct = total > 0 ? Math.max(0, Math.min(100, Math.floor(current * 100 / total))) : 0;
+
+      els.progressFill.style.width = `${pct}%`;
+      els.progressPct.textContent = pct;
+
+      setClassByStatus(job.status);
+
+      if (job.error) {
+        els.errorText.textContent = job.error;
+        show(els.errorCard);
+      } else {
+        hide(els.errorCard);
+      }
+
+      if (job.status === 'done') {
+        els.resultLink.href = resultUrl;
+        show(els.resultLink);
+        hide(els.runningHint);
+        hide(els.errorHint);
+      } else if (job.status === 'error') {
+        hide(els.resultLink);
+        hide(els.runningHint);
+        show(els.errorHint);
+      } else {
+        hide(els.resultLink);
+        show(els.runningHint);
+        hide(els.errorHint);
+      }
+    }
+
+    async function pollStatus() {
+      try {
+        const resp = await fetch(statusUrl, { cache: 'no-store' });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const job = await resp.json();
+        renderJob(job);
+
+        if (job.status === 'done' || job.status === 'error') {
+          if (pollTimer) clearInterval(pollTimer);
+          pollTimer = null;
+        }
+      } catch (err) {
+        console.error('status poll failed:', err);
+      }
+    }
+
+    pollTimer = setInterval(pollStatus, 2000);
+    pollStatus();
+  </script>
+</body>
+</html>

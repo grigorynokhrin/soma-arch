@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>{{ title }}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  {% if job.status in ["queued", "running"] %}
+  <meta http-equiv="refresh" content="3">
+  {% endif %}
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      max-width: 980px;
+      margin: 40px auto;
+      padding: 0 16px;
+      line-height: 1.5;
+      background: #fafafa;
+      color: #111;
+    }
+    .card {
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 14px;
+      padding: 18px;
+      margin-bottom: 18px;
+    }
+    .muted { color: #666; }
+    .mono {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .bar {
+      width: 100%;
+      height: 16px;
+      background: #eee;
+      border-radius: 999px;
+      overflow: hidden;
+      margin: 10px 0 6px;
+    }
+    .fill {
+      height: 100%;
+      background: #222;
+    }
+    .ok { color: #146c2e; }
+    .err { color: #9b1c1c; }
+    a { text-decoration: none; }
+  </style>
+</head>
+<body>
+  <h1>Whisper job</h1>
+
+  <div class="card">
+    <div><strong>Job ID:</strong> <span class="mono">{{ job.job_id }}</span></div>
+    <div><strong>Файл:</strong> {{ job.filename }}</div>
+    <div><strong>Статус:</strong>
+      {% if job.status == "done" %}
+        <span class="ok">{{ job.status }}</span>
+      {% elif job.status == "error" %}
+        <span class="err">{{ job.status }}</span>
+      {% else %}
+        {{ job.status }}
+      {% endif %}
+    </div>
+    <div><strong>Stage:</strong> {{ job.stage }}</div>
+    <div><strong>Started:</strong> {{ job.started_at }}</div>
+    <div><strong>Finished:</strong> {{ job.finished_at or "—" }}</div>
+    <div><strong>Model:</strong> {{ job.model_name }}</div>
+    <div><strong>Compute:</strong> {{ job.compute_type }}{% if job.used_compute %} → {{ job.used_compute }}{% endif %}</div>
+    <div><strong>Chunk:</strong> {{ job.chunk_min }} мин</div>
+    <div><strong>Overlap:</strong> {{ job.overlap_sec }} сек</div>
+    <div><strong>VAD:</strong> {{ "on" if job.vad else "off" }}</div>
+  </div>
+
+  <div class="card">
+    <div><strong>Прогресс:</strong> {{ job.progress_current }} / {{ job.progress_total }}</div>
+    {% set pct = 0 %}
+    {% if job.progress_total and job.progress_total > 0 %}
+      {% set pct = (job.progress_current * 100 / job.progress_total) | int %}
+    {% endif %}
+    <div class="bar">
+      <div class="fill" style="width: {{ pct }}%;"></div>
+    </div>
+    <div class="muted">{{ pct }}%</div>
+  </div>
+
+  {% if job.error %}
+  <div class="card err">
+    <strong>Ошибка:</strong><br>
+    <span class="mono">{{ job.error }}</span>
+  </div>
+  {% endif %}
+
+  <div class="card">
+    {% if job.status == "done" %}
+      <a href="/myservices/whisper/jobs/{{ job.job_id }}/result">Открыть результат →</a>
+    {% elif job.status == "error" %}
+      <span class="err">Job завершился с ошибкой.</span>
+    {% else %}
+      <span class="muted">Страница обновляется каждые 3 секунды.</span>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <a href="/myservices/whisper/">← Назад в Whisper</a>
+  </div>
+</body>
+</html>
