@@ -115,7 +115,7 @@ For Caddy dev route:
     curl -fsS http://127.0.0.1/<route>/healthz
     curl -fsS http://127.0.0.1/myservices/whisper/healthz
 
-## Done checklist  
+## Done checklist
 
 A Codex task is not done until it reports:
 
