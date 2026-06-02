@@ -100,6 +100,27 @@ else
   warn "curl not found; skipping HTTP health check"
 fi
 
+section "optional soma dev services"
+
+if docker ps --format '{{.Names}}' | grep -qx "soma-whisper-dev"; then
+  ok "optional dev container running: soma-whisper-dev"
+
+  if command -v curl >/dev/null 2>&1; then
+    if curl -fsS --max-time 5 http://127.0.0.1:18080/whisper-dev/healthz >/tmp/soma-whisper-dev-healthcheck.out 2>/tmp/soma-whisper-dev-healthcheck.err; then
+      ok "optional dev whisper health endpoint responded"
+      cat /tmp/soma-whisper-dev-healthcheck.out
+    else
+      warn "optional dev whisper health endpoint did not respond successfully"
+      cat /tmp/soma-whisper-dev-healthcheck.err 2>/dev/null || true
+    fi
+  else
+    warn "curl not found; skipping optional dev HTTP health check"
+  fi
+else
+  warn "optional dev container not running: soma-whisper-dev"
+fi
+
+
 section "summary"
 
 if [ "$FAILED" -eq 0 ]; then
