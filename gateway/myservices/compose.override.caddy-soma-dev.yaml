@@ -1,0 +1,10 @@
+services:
+  caddy:
+    networks:
+      default: {}
+      soma_dev: {}
+
+networks:
+  soma_dev:
+    external: true
+    name: compose_default

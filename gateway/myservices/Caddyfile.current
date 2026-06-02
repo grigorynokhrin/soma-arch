@@ -1,0 +1,35 @@
+:80 {
+    log {
+        output stdout
+        format console
+    }
+
+    handle /myservices/image-upscale {
+        redir /myservices/image-upscale/ 308
+    }
+
+    handle_path /myservices/image-upscale/* {
+        reverse_proxy image-upscale:7860
+    }
+
+    handle /myservices/whisper* {
+        reverse_proxy whisper:8000
+    }
+
+
+    handle /whisper-dev* {
+        reverse_proxy soma-whisper-dev:8000
+    }
+
+    handle /myservices/ocr* {
+        respond "OCR placeholder" 200
+    }
+
+    handle /myservices* {
+        reverse_proxy home:8000
+    }
+
+    handle {
+        respond "Not found" 404
+    }
+}
