@@ -133,9 +133,11 @@ Remux command policy:
     -map_metadata -1 for old global/container metadata
     allowlisted user-entered -metadata fields only
     -movflags use_metadata_tags
+    convert MP4-incompatible text subtitles to mov_text
+    reject image subtitles before FFmpeg
     exactly one selected default audio stream when requested
 
-Remux mode does not transcode. It preserves chapters/parts, wipes old global/container metadata, and writes only user-entered allowlisted global metadata:
+Remux mode does not transcode video or audio. It preserves chapters/parts, wipes old global/container metadata, and writes only user-entered allowlisted global metadata:
 
     title
     artist
@@ -145,15 +147,15 @@ Remux mode does not transcode. It preserves chapters/parts, wipes old global/con
     description
     publisher
 
-Selected audio/subtitle stream language and title/name tags are restored from probe data as much as MP4 supports. Per-stream metadata editing is not in v1: stream tags are not taken from the user-entered global metadata fields. MP4/player visibility of some global metadata fields is container/player-dependent.
+Selected audio/subtitle stream language and title/name tags are restored from probe data as much as MP4 supports. Text subtitles that MP4 cannot copy directly, including SubRip/SRT, ASS/SSA, and WebVTT, are converted to `mov_text`. Image subtitles such as DVD subtitles or PGS fail before FFmpeg because OCR is out of scope for v1. Per-stream metadata editing is not in v1: stream tags are not taken from the user-entered global metadata fields. MP4/player visibility of some global metadata fields is container/player-dependent.
 
 If FFmpeg cannot mux a selected stream into MP4, the job fails and shows a concise stderr excerpt.
 
-Known limitation:
+Subtitle limitation:
 
-    MP4 subtitle compatibility depends on the source subtitle codec.
+    Image subtitles cannot be converted to MP4 text subtitles without OCR; deselect this subtitle stream.
 
-Image-based Blu-ray subtitles such as PGS may fail in MP4. The skeleton fails rather than silently degrading quality.
+FFmpeg and FFprobe stdout/stderr are decoded with replacement characters for invalid UTF-8 bytes, so user-facing job errors should show the real FFmpeg failure rather than a Python `UnicodeDecodeError`.
 
 ## Profile Conversion Mode
 
@@ -254,7 +256,7 @@ These should be adjusted after real device playback tests.
 - no profile editing or CRUD
 - no authentication
 - no explicit free-space preflight yet
-- MP4 subtitle compatibility may fail for image-based subtitles
+- image subtitles are rejected in MP4 remux unless OCR support is added later
 - VOB output is a VOB-like MPEG-PS file, not a full DVD folder structure
 - profile conversion subtitle copy may fail depending on output container compatibility
 

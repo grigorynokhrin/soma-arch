@@ -4,7 +4,7 @@ from pathlib import Path
 import json
 import re
 
-from command_builder import build_convert_args, build_remux_args
+from command_builder import IMAGE_SUBTITLE_ERROR, build_convert_args, build_remux_args, decode_process_bytes, subtitle_remux_action
 
 HERE = Path(__file__).resolve().parent
 PROFILES_PATH = HERE / "profiles.json"
@@ -45,6 +45,7 @@ def fake_probe(avg_frame_rate: str = "24000/1001") -> dict:
             {
                 "index": 3,
                 "codec_type": "subtitle",
+                "codec_name": "subrip",
                 "language": "eng",
                 "title": "English subtitles must survive",
             }
@@ -176,6 +177,7 @@ def main() -> None:
     assert ("-map_metadata", "0") not in list(zip(remux, remux[1:]))
     assert "-c:v" not in remux
     assert "-c:a" not in remux
+    assert_pair(remux, "-c:s:0", "mov_text")
     assert_pair(remux, "-metadata:s:a:0", "language=eng")
     assert_pair(remux, "-metadata:s:a:0", "title=English stream name must survive")
     assert_pair(remux, "-metadata:s:a:0", "handler_name=English stream name must survive")
@@ -191,6 +193,39 @@ def main() -> None:
     assert "title=Kept" in remux
     assert "genre=Live" in remux
     assert re.search(r"-disposition:a:1\s+default", " ".join(remux))
+
+    mov_text_probe = fake_probe()
+    mov_text_probe["subtitle_streams"][0]["codec_name"] = "mov_text"
+    mov_text = build_remux_args(
+        input_path=Path("input.mkv"),
+        output_path=Path("remuxed.mp4"),
+        probe=mov_text_probe,
+        audio_streams=[1],
+        default_audio_stream=1,
+        subtitle_streams=[3],
+        metadata={"title": "Kept"},
+    )
+    assert "-c:s:0" not in mov_text
+    assert_pair(mov_text, "-metadata:s:s:0", "language=eng")
+    assert subtitle_remux_action(mov_text_probe["subtitle_streams"][0]) == "copy"
+
+    image_probe = fake_probe()
+    image_probe["subtitle_streams"][0]["codec_name"] = "hdmv_pgs_subtitle"
+    try:
+        build_remux_args(
+            input_path=Path("input.mkv"),
+            output_path=Path("remuxed.mp4"),
+            probe=image_probe,
+            audio_streams=[1],
+            default_audio_stream=1,
+            subtitle_streams=[3],
+            metadata={"title": "Kept"},
+        )
+        raise AssertionError("image subtitle should have failed before ffmpeg")
+    except RuntimeError as exc:
+        assert str(exc) == IMAGE_SUBTITLE_ERROR
+
+    assert decode_process_bytes(b"ok\xd1bad") == "ok\ufffdbad"
 
     print("selfcheck ok: profiles and command construction validated")
 

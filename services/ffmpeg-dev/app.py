@@ -15,7 +15,7 @@ from fastapi import FastAPI, File, Form, Request, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse, PlainTextResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
-from command_builder import ALLOWED_METADATA_KEYS, build_convert_args, build_remux_args
+from command_builder import ALLOWED_METADATA_KEYS, build_convert_args, build_remux_args, decode_process_bytes, subtitle_remux_action
 
 ROOT_PATH = os.getenv("FFMPEG_ROOT_PATH", "/ffmpeg-dev")
 TEMPLATE_ROOT_PATH = ROOT_PATH.rstrip("/")
@@ -142,7 +142,13 @@ def stderr_excerpt(text: str, limit: int = 2400) -> str:
 
 def run_args(args: list[str]) -> subprocess.CompletedProcess[str]:
     append_log("run: " + " ".join(args))
-    return subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    result = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    return subprocess.CompletedProcess(
+        args=result.args,
+        returncode=result.returncode,
+        stdout=decode_process_bytes(result.stdout),
+        stderr=decode_process_bytes(result.stderr),
+    )
 
 
 def run_checked(args: list[str]) -> subprocess.CompletedProcess[str]:
@@ -179,27 +185,32 @@ def stream_title(stream: dict[str, Any]) -> str | None:
     return tags.get("title") or tags.get("handler_name") or tags.get("name")
 
 
+def normalized_stream(stream: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "index": stream.get("index"),
+        "codec_type": stream.get("codec_type"),
+        "codec_name": stream.get("codec_name"),
+        "language": stream_language(stream),
+        "title": stream_title(stream),
+        "duration": stream.get("duration"),
+        "bitrate": stream.get("bit_rate"),
+        "channels": stream.get("channels"),
+        "width": stream.get("width"),
+        "height": stream.get("height"),
+        "avg_frame_rate": stream.get("avg_frame_rate"),
+        "display_aspect_ratio": stream.get("display_aspect_ratio"),
+        "disposition": stream.get("disposition") or {},
+    }
+
+
 def normalize_probe(raw: dict[str, Any]) -> dict[str, Any]:
     streams = raw.get("streams") or []
     normalized = []
     for stream in streams:
-        normalized.append(
-            {
-                "index": stream.get("index"),
-                "codec_type": stream.get("codec_type"),
-                "codec_name": stream.get("codec_name"),
-                "language": stream_language(stream),
-                "title": stream_title(stream),
-                "duration": stream.get("duration"),
-                "bitrate": stream.get("bit_rate"),
-                "channels": stream.get("channels"),
-                "width": stream.get("width"),
-                "height": stream.get("height"),
-                "avg_frame_rate": stream.get("avg_frame_rate"),
-                "display_aspect_ratio": stream.get("display_aspect_ratio"),
-                "disposition": stream.get("disposition") or {},
-            }
-        )
+        item = normalized_stream(stream)
+        if item["codec_type"] == "subtitle":
+            item["remux_action"] = subtitle_remux_action(item)
+        normalized.append(item)
     return {
         "format": raw.get("format") or {},
         "streams": normalized,

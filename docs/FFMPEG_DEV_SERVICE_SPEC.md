@@ -331,6 +331,20 @@ The fixed global metadata allowlist is:
 
 Chapters are not considered user metadata for this policy and must remain preserved. MP4/player visibility of some global metadata fields is container/player-dependent. Per-stream metadata editing is not in v1.
 
+MP4 remux subtitle policy:
+
+- video is stream-copied
+- selected audio streams are stream-copied
+- selected audio default disposition remains controlled by the UI
+- MP4-compatible text subtitle streams can be copied
+- MP4-incompatible text subtitle streams are converted to `mov_text`
+- at minimum, `subrip`, `ass`, `ssa`, and `webvtt` inputs should become `mov_text` when needed
+- selected subtitle language and title/name tags should be restored from probe data as much as MP4 supports
+- image subtitles such as `dvd_subtitle` and `hdmv_pgs_subtitle` should fail before FFmpeg with a clear OCR-related message
+- selected subtitles must not be silently dropped
+
+FFmpeg and FFprobe log decoding should not crash on invalid UTF-8. Capture process output as bytes and decode with replacement, or otherwise configure decoding with `errors="replace"`, so failed jobs display the FFmpeg error rather than a Python `UnicodeDecodeError`.
+
 ## Allowlists
 
 Initial container allowlist:

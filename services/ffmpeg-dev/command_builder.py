@@ -4,6 +4,18 @@ from pathlib import Path
 from typing import Any
 
 ALLOWED_METADATA_KEYS = {"title", "artist", "date", "genre", "language", "description", "publisher"}
+MP4_SUBTITLE_COPY_CODECS = {"mov_text"}
+MP4_SUBTITLE_TO_MOV_TEXT_CODECS = {"subrip", "srt", "ass", "ssa", "webvtt"}
+IMAGE_SUBTITLE_CODECS = {"dvd_subtitle", "hdmv_pgs_subtitle", "pgs", "dvdsub", "vobsub"}
+IMAGE_SUBTITLE_ERROR = "Image subtitles cannot be converted to MP4 text subtitles without OCR; deselect this subtitle stream."
+
+
+def decode_process_bytes(data: bytes | str | None) -> str:
+    if data is None:
+        return ""
+    if isinstance(data, str):
+        return data
+    return data.decode("utf-8", errors="replace")
 
 
 def rational_to_float(value: str | None) -> float | None:
@@ -47,6 +59,31 @@ def add_selected_stream_metadata(args: list[str], stream_spec: str, stream: dict
         args += [f"-metadata:s:{stream_spec}", f"handler_name={title}"]
 
 
+def subtitle_codec(stream: dict[str, Any]) -> str:
+    return str(stream.get("codec_name") or "").strip().lower()
+
+
+def subtitle_mp4_codec(stream: dict[str, Any]) -> str:
+    codec = subtitle_codec(stream)
+    if codec in MP4_SUBTITLE_COPY_CODECS:
+        return "copy"
+    if codec in MP4_SUBTITLE_TO_MOV_TEXT_CODECS:
+        return "mov_text"
+    if codec in IMAGE_SUBTITLE_CODECS:
+        raise RuntimeError(IMAGE_SUBTITLE_ERROR)
+    raise RuntimeError(f"Subtitle codec {codec or 'unknown'} is not supported for MP4 remux; deselect this subtitle stream.")
+
+
+def subtitle_remux_action(stream: dict[str, Any]) -> str:
+    try:
+        codec = subtitle_mp4_codec(stream)
+    except RuntimeError as e:
+        return str(e)
+    if codec == "copy":
+        return "copy"
+    return f"convert to {codec}"
+
+
 def build_remux_args(
     *,
     input_path: Path,
@@ -79,7 +116,11 @@ def build_remux_args(
         args += [f"-disposition:a:{out_audio_idx}", disposition]
 
     for out_subtitle_idx, source_idx in enumerate(subtitle_streams):
-        add_selected_stream_metadata(args, f"s:{out_subtitle_idx}", stream_by_index(probe, "subtitle_streams", source_idx))
+        stream = stream_by_index(probe, "subtitle_streams", source_idx)
+        codec = subtitle_mp4_codec(stream)
+        if codec != "copy":
+            args += [f"-c:s:{out_subtitle_idx}", codec]
+        add_selected_stream_metadata(args, f"s:{out_subtitle_idx}", stream)
 
     args.append(str(output_path))
     return args

@@ -65,12 +65,13 @@
 
         <h4>Subtitle streams</h4>
         <table>
-          <tr><th>Keep</th><th>Index</th><th>Codec</th><th>Language</th><th>Title</th></tr>
+          <tr><th>Keep</th><th>Index</th><th>Codec</th><th>MP4 remux</th><th>Language</th><th>Title</th></tr>
           {% for stream in probe.subtitle_streams %}
           <tr>
             <td><input type="checkbox" name="subtitle_streams" value="{{ stream.index }}"></td>
             <td>{{ stream.index }}</td>
             <td>{{ stream.codec_name }}</td>
+            <td>{{ stream.remux_action or "" }}</td>
             <td>{{ stream.language or "" }}</td>
             <td>{{ stream.title or "" }}</td>
           </tr>
@@ -103,7 +104,7 @@
           </div>
           <div>
             <label for="meta_description">description</label>
-            <input id="meta_description" name="description">
+            <textarea id="meta_description" name="description" rows="3"></textarea>
           </div>
           <div>
             <label for="meta_publisher">publisher</label>

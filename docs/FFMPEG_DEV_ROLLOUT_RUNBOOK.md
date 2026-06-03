@@ -209,6 +209,16 @@ If paths omit `/ffmpeg-dev`, verify the compose environment contains:
 
     FFMPEG_ROOT_PATH=/ffmpeg-dev
 
+### MP4 Remux Subtitle Failure
+
+Text subtitle codecs such as SubRip/SRT, ASS/SSA, and WebVTT should be converted to MP4 `mov_text` when needed. Video and audio must remain stream-copy.
+
+Image subtitles such as PGS or DVD subtitles are not supported in MP4 remux v1 because converting them to text requires OCR. The expected user-facing error is:
+
+    Image subtitles cannot be converted to MP4 text subtitles without OCR; deselect this subtitle stream.
+
+If a remux failure shows a Python `UnicodeDecodeError`, the process-output decoding path has regressed. FFmpeg and FFprobe logs should be decoded with replacement so the real FFmpeg error is visible.
+
 ### Caddy Route Fails
 
 Check that `soma-ffmpeg-dev` is attached to the external Caddy/dev network:
