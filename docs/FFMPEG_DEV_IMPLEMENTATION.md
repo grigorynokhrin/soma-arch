@@ -9,7 +9,7 @@ Initial repository skeleton:
     services/ffmpeg-dev/
     compose/ffmpeg-dev.compose.yml
 
-This is dev-only. It does not modify Caddy, production Compose, `/srv/soma`, or `/home/grigorynokhrin/myservices`.
+This is dev-only. It does not modify Home, Whisper, production Compose, `/srv/soma`, or `/home/grigorynokhrin/myservices`.
 
 ## Purpose
 
@@ -59,6 +59,24 @@ Future production route, if promoted later:
     /myservices/ffmpeg
 
 That route is not added in this skeleton.
+
+## Caddy Dev Route
+
+The repo reference Caddyfile includes a dev route:
+
+    handle /ffmpeg-dev* {
+        reverse_proxy soma-ffmpeg-dev:8000
+    }
+
+The FFmpeg dev compose file persists membership in the external Docker network used by Caddy:
+
+    compose_default
+
+The service keeps its normal project network and also joins that external Caddy/dev network with alias:
+
+    soma-ffmpeg-dev
+
+The `/myservices/` home page button/link is not tracked in this repo. Adding a visible home-page entry for FFmpeg is a separate legacy-home task.
 
 ## Runtime Data Layout
 
@@ -229,7 +247,7 @@ These should be adjusted after real device playback tests.
 
 ## Known Limitations
 
-- dev-only skeleton; no Caddy route is added
+- dev-only skeleton; Caddy route is reference-only until the live Caddyfile is updated/reloaded
 - one active job only
 - only the last job is kept
 - no database
@@ -247,4 +265,4 @@ These should be adjusted after real device playback tests.
 - better stream compatibility warnings before MP4 remux
 - device-tested LaCie bitrate tuning
 - optional audio codec override for LaCie MP3 alternatives
-- route document for `/ffmpeg-dev` only after explicit Caddy approval
+- legacy-home `/myservices/` button/link task

@@ -2,10 +2,15 @@
 
 This runbook validates `soma-ffmpeg-dev` as a dev-only service on the server.
 
-It must not change Caddy, Home, Whisper, production Compose, or legacy `/home/grigorynokhrin/myservices` behavior. Initial validation uses the direct localhost bind only:
+It must not change Home, Whisper, production Compose, or legacy `/home/grigorynokhrin/myservices` behavior. Initial validation can use the direct localhost bind:
 
     http://127.0.0.1:18082/ffmpeg-dev/healthz
     http://127.0.0.1:18082/ffmpeg-dev/
+
+After Caddy is reloaded with the repo route reference, `/ffmpeg-dev` is also available through Caddy:
+
+    http://127.0.0.1/ffmpeg-dev/healthz
+    http://127.0.0.1/ffmpeg-dev/
 
 ## Compose Safety
 
@@ -30,6 +35,16 @@ The build context is relative to the compose file:
     ../services/ffmpeg-dev
 
 This works from a normal checkout or from a server worktree, as long as commands are run from the worktree repo root.
+
+The service also joins the external Docker network used by Caddy:
+
+    compose_default
+
+The external-network alias is:
+
+    soma-ffmpeg-dev
+
+This lets `myservices-caddy` resolve `soma-ffmpeg-dev:8000` for the `/ffmpeg-dev` route.
 
 ## Server Worktree Setup
 
@@ -96,7 +111,26 @@ Check the page renders:
 
 The response should be HTML for the FFmpeg dev page.
 
-No Caddy route is expected during this initial rollout.
+## Caddy Route
+
+The live Caddy route should mirror:
+
+    gateway/myservices/Caddyfile.current
+
+Expected route block:
+
+    handle /ffmpeg-dev* {
+        reverse_proxy soma-ffmpeg-dev:8000
+    }
+
+This route should be placed near `/whisper-dev*` and before the `/myservices*` catch-all.
+
+After reloading Caddy, check:
+
+    curl -fsS http://127.0.0.1/ffmpeg-dev/healthz
+    curl -fsS http://127.0.0.1/ffmpeg-dev/ | head
+
+The `/myservices/` home page button/link is not tracked in this repo. Adding a button there is a separate legacy-home task against the runtime home UI source.
 
 ## CPU-Only V1 Policy
 
@@ -174,6 +208,23 @@ Check the rendered form actions and links:
 If paths omit `/ffmpeg-dev`, verify the compose environment contains:
 
     FFMPEG_ROOT_PATH=/ffmpeg-dev
+
+### Caddy Route Fails
+
+Check that `soma-ffmpeg-dev` is attached to the external Caddy/dev network:
+
+    docker inspect soma-ffmpeg-dev
+
+Expected network:
+
+    compose_default
+
+Check that `myservices-caddy` is also attached to `compose_default` and can resolve the service name:
+
+    docker inspect myservices-caddy
+    docker exec myservices-caddy getent hosts soma-ffmpeg-dev
+
+If DNS resolution fails, verify the compose config still includes the external `caddy_dev` network with alias `soma-ffmpeg-dev`.
 
 ### Compose Project Safety
 
