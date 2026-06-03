@@ -15,7 +15,7 @@ from fastapi import FastAPI, File, Form, Request, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse, PlainTextResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
-from command_builder import ALLOWED_METADATA_KEYS, build_convert_args, build_remux_args, decode_process_bytes, subtitle_remux_action
+from command_builder import ALLOWED_METADATA_KEYS, build_convert_plan, build_remux_args, decode_process_bytes, subtitle_remux_action
 
 ROOT_PATH = os.getenv("FFMPEG_ROOT_PATH", "/ffmpeg-dev")
 TEMPLATE_ROOT_PATH = ROOT_PATH.rstrip("/")
@@ -128,6 +128,7 @@ def public_status(job: dict[str, Any]) -> dict[str, Any]:
         "artifacts": job.get("artifacts", []),
         "input_files": job.get("input_files", []),
         "profile_id": job.get("profile_id"),
+        "warnings": job.get("warnings", []),
     }
 
 
@@ -375,6 +376,7 @@ async def convert_run(profile_id: str = Form(...), video_files: list[UploadFile]
             "profile_id": profile_id,
             "input_files": [],
             "artifacts": [],
+            "warnings": [],
         }
         save_job(job)
 
@@ -384,6 +386,7 @@ async def convert_run(profile_id: str = Form(...), video_files: list[UploadFile]
                 raise RuntimeError("No input files selected")
             artifacts = []
             input_items = []
+            warnings = []
             for idx, upload in enumerate(uploads, 1):
                 original = safe_name(upload.filename)
                 input_path = INPUT_DIR / f"{idx:03d}-{original}"
@@ -393,8 +396,11 @@ async def convert_run(profile_id: str = Form(...), video_files: list[UploadFile]
 
                 probe = normalize_probe(ffprobe_json(input_path))
                 output_path = OUTPUT_DIR / f"{safe_stem(original)}-{profile_id}.{profile['extension']}"
-                args = build_convert_args(input_path, output_path, profile, probe)
-                run_checked(args)
+                plan = build_convert_plan(input_path, output_path, profile, probe)
+                for warning in plan["warnings"]:
+                    warnings.append(f"{original}: {warning}")
+                    append_log("warning: " + warnings[-1])
+                run_checked(plan["args"])
 
                 input_items.append({"index": idx, "name": original, "path": str(input_path), "status": "done"})
                 artifacts.append(
@@ -405,7 +411,7 @@ async def convert_run(profile_id: str = Form(...), video_files: list[UploadFile]
                         "size_bytes": output_path.stat().st_size,
                     }
                 )
-                job.update({"input_files": input_items, "artifacts": artifacts, "stage": f"converted {idx}/{len(uploads)}"})
+                job.update({"input_files": input_items, "artifacts": artifacts, "warnings": warnings, "stage": f"converted {idx}/{len(uploads)}"})
                 save_job(job)
 
             job.update({"status": "done", "stage": "done", "finished_at": now_iso(), "error": None})

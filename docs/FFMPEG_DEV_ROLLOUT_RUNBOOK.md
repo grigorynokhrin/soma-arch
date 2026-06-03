@@ -219,6 +219,19 @@ Image subtitles such as PGS or DVD subtitles are not supported in MP4 remux v1 b
 
 If a remux failure shows a Python `UnicodeDecodeError`, the process-output decoding path has regressed. FFmpeg and FFprobe logs should be decoded with replacement so the real FFmpeg error is visible.
 
+### Batch Profile Subtitle Handling
+
+Legacy AVI/VOB profile conversions should not fail just because the input has subtitles.
+
+Expected behavior:
+
+- compatible subtitle streams are preserved only when safe for the target container
+- text subtitles are burned into video for legacy AVI/VOB profiles
+- unsupported image subtitles are dropped with a warning
+- video and audio profile codecs remain unchanged
+
+This is intentionally different from MP4 remux, where text subtitles become `mov_text` streams when possible.
+
 ### Caddy Route Fails
 
 Check that `soma-ffmpeg-dev` is attached to the external Caddy/dev network:

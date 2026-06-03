@@ -4,7 +4,7 @@ from pathlib import Path
 import json
 import re
 
-from command_builder import IMAGE_SUBTITLE_ERROR, build_convert_args, build_remux_args, decode_process_bytes, subtitle_remux_action
+from command_builder import IMAGE_SUBTITLE_ERROR, build_convert_args, build_convert_plan, build_remux_args, decode_process_bytes, subtitle_remux_action
 
 HERE = Path(__file__).resolve().parent
 PROFILES_PATH = HERE / "profiles.json"
@@ -15,8 +15,8 @@ def load_profiles() -> dict[str, dict]:
     return {item["id"]: item for item in profiles}
 
 
-def fake_probe(avg_frame_rate: str = "24000/1001") -> dict:
-    return {
+def fake_probe(avg_frame_rate: str = "24000/1001", subtitle_codec: str | None = "subrip") -> dict:
+    probe = {
         "video_streams": [
             {
                 "index": 0,
@@ -41,16 +41,20 @@ def fake_probe(avg_frame_rate: str = "24000/1001") -> dict:
                 "title": "Russian stream name must survive",
             },
         ],
-        "subtitle_streams": [
+        "subtitle_streams": [],
+    }
+    if subtitle_codec:
+        probe["subtitle_streams"].append(
             {
                 "index": 3,
                 "codec_type": "subtitle",
-                "codec_name": "subrip",
+                "codec_name": subtitle_codec,
                 "language": "eng",
                 "title": "English subtitles must survive",
+                "disposition": {"default": 1},
             }
-        ],
-    }
+        )
+    return probe
 
 
 def value_after(args: list[str], key: str) -> str:
@@ -75,8 +79,8 @@ def assert_video_filter(args: list[str], fragment: str) -> None:
     assert fragment in vf, f"{fragment!r} missing from filter: {vf}"
 
 
-def assert_convert_shape(profile: dict, *, output_name: str, checks: dict[str, str]) -> list[str]:
-    args = build_convert_args(Path("input.mkv"), Path(output_name), profile, fake_probe())
+def assert_convert_shape(profile: dict, *, output_name: str, checks: dict[str, str], probe: dict | None = None) -> list[str]:
+    args = build_convert_args(Path("input.mkv"), Path(output_name), profile, probe or fake_probe(subtitle_codec=None))
     assert args[0] == "ffmpeg"
     assert args[-1] == output_name
     assert value_after(args, "-c:v") == checks["video_codec"]
@@ -91,6 +95,24 @@ def assert_convert_shape(profile: dict, *, output_name: str, checks: dict[str, s
     if checks.get("format"):
         assert value_after(args, "-f") == checks["format"]
     return args
+
+
+def assert_no_subtitle_map(args: list[str]) -> None:
+    assert "0:3" not in args
+    assert "-c:s" not in args
+    assert "-c:s:0" not in args
+
+
+def assert_burn_plan(profile: dict, *, output_name: str, codec: str) -> dict:
+    plan = build_convert_plan(Path("input path/clip, one & two (test).mkv"), Path(output_name), profile, fake_probe(subtitle_codec=codec))
+    args = plan["args"]
+    vf = value_after(args, "-vf")
+    assert "subtitles=filename='input path/clip, one & two (test).mkv':si=0" in vf
+    assert_no_subtitle_map(args)
+    assert plan["warnings"], "burn-in warning missing"
+    assert f"codec {codec}" in plan["warnings"][0]
+    assert "burned into video" in plan["warnings"][0]
+    return plan
 
 
 def main() -> None:
@@ -160,6 +182,34 @@ def main() -> None:
             "fourcc": "XVID",
         },
     )
+
+    for profile_id, output_name in [
+        ("cowon-iaudio-d2-plus", "movie.avi"),
+        ("lacie-ss-16x9-avi", "movie.avi"),
+        ("lacie-ss-4x3-vob-pal", "movie.vob"),
+    ]:
+        burn = assert_burn_plan(profiles[profile_id], output_name=output_name, codec="mov_text")
+        assert value_after(burn["args"], "-c:v") == profiles[profile_id]["video"]["codec"]
+        assert value_after(burn["args"], "-c:a") == profiles[profile_id]["audio"]["codec"]
+
+    cowon_subrip = assert_burn_plan(profiles["cowon-iaudio-d2-plus"], output_name="movie.avi", codec="subrip")
+    assert "0:3" not in cowon_subrip["args"]
+
+    xsub_plan = build_convert_plan(Path("input.mkv"), Path("movie.avi"), profiles["cowon-iaudio-d2-plus"], fake_probe(subtitle_codec="xsub"))
+    assert_pair(xsub_plan["args"], "-map", "0:3")
+    assert_pair(xsub_plan["args"], "-c:s", "copy")
+    assert not xsub_plan["warnings"]
+
+    dvdsub_plan = build_convert_plan(Path("input.mkv"), Path("movie.vob"), profiles["lacie-ss-4x3-vob-pal"], fake_probe(subtitle_codec="dvd_subtitle"))
+    assert_pair(dvdsub_plan["args"], "-map", "0:3")
+    assert_pair(dvdsub_plan["args"], "-c:s", "copy")
+    assert not dvdsub_plan["warnings"]
+
+    pgs_plan = build_convert_plan(Path("input.mkv"), Path("movie.avi"), profiles["cowon-iaudio-d2-plus"], fake_probe(subtitle_codec="hdmv_pgs_subtitle"))
+    assert_no_subtitle_map(pgs_plan["args"])
+    assert pgs_plan["warnings"]
+    assert "was dropped" in pgs_plan["warnings"][0]
+    assert "hdmv_pgs_subtitle" in pgs_plan["warnings"][0]
 
     remux = build_remux_args(
         input_path=Path("input.mkv"),

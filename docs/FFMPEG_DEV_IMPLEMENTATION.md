@@ -172,13 +172,23 @@ Conversion maps:
 
     first video stream
     all audio streams if present
-    subtitle streams if possible
+    compatible subtitle streams only when safe
     chapters with -map_chapters 0
     metadata with -map_metadata 0
 
 FFmpeg commands are generated from structured profile fields. There is no raw command input and no `shell=True`.
 
 These v1 profiles are CPU encode profiles. They do not request NVENC, NVDEC, CUDA, or GPU device access.
+
+Batch profile subtitle policy:
+
+- video/audio profile settings are unchanged
+- subtitles are not mapped blindly
+- compatible subtitle streams are preserved only when safe for the target container
+- text subtitles such as SubRip/SRT, ASS/SSA, WebVTT, and MOV text are burned into video for legacy AVI/VOB profiles
+- unsupported image subtitles are dropped with a warning instead of failing the job
+
+This differs from MP4 remux mode, where text subtitles are represented as MP4 `mov_text` subtitle streams when possible.
 
 ## Predefined Profiles
 
@@ -258,7 +268,7 @@ These should be adjusted after real device playback tests.
 - no explicit free-space preflight yet
 - image subtitles are rejected in MP4 remux unless OCR support is added later
 - VOB output is a VOB-like MPEG-PS file, not a full DVD folder structure
-- profile conversion subtitle copy may fail depending on output container compatibility
+- profile conversion image subtitles are dropped with warning unless OCR support is added later
 
 ## Next Iteration TODO
 

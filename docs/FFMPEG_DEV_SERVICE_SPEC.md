@@ -345,6 +345,18 @@ MP4 remux subtitle policy:
 
 FFmpeg and FFprobe log decoding should not crash on invalid UTF-8. Capture process output as bytes and decode with replacement, or otherwise configure decoding with `errors="replace"`, so failed jobs display the FFmpeg error rather than a Python `UnicodeDecodeError`.
 
+Batch legacy profile subtitle policy:
+
+- do not blindly map every subtitle stream into AVI/VOB outputs
+- preserve compatible subtitle streams only when safe for the target container
+- for Cowon iAudio D2+ AVI and LaCie SS 16:9 AVI, `xsub` subtitles may be copied when safe
+- for LaCie VOB profiles, `dvd_subtitle` subtitles may be copied when safe
+- text subtitles such as `subrip`, `srt`, `ass`, `ssa`, `webvtt`, and `mov_text` should be burned into the transcoded video for legacy AVI/VOB profiles
+- unsupported image subtitles such as PGS should be dropped with a warning, not fail the whole batch job
+- selected subtitles must not be silently dropped; dropped or burned subtitles should be recorded in job warnings
+
+This differs from MP4 remux mode: MP4 remux keeps video/audio as stream copy and converts text subtitles to `mov_text` streams, while legacy batch profiles already transcode video and therefore burn text subtitles into video when needed.
+
 ## Allowlists
 
 Initial container allowlist:

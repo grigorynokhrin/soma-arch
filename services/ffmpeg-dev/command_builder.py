@@ -6,6 +6,7 @@ from typing import Any
 ALLOWED_METADATA_KEYS = {"title", "artist", "date", "genre", "language", "description", "publisher"}
 MP4_SUBTITLE_COPY_CODECS = {"mov_text"}
 MP4_SUBTITLE_TO_MOV_TEXT_CODECS = {"subrip", "srt", "ass", "ssa", "webvtt"}
+TEXT_SUBTITLE_CODECS = MP4_SUBTITLE_TO_MOV_TEXT_CODECS | MP4_SUBTITLE_COPY_CODECS
 IMAGE_SUBTITLE_CODECS = {"dvd_subtitle", "hdmv_pgs_subtitle", "pgs", "dvdsub", "vobsub"}
 IMAGE_SUBTITLE_ERROR = "Image subtitles cannot be converted to MP4 text subtitles without OCR; deselect this subtitle stream."
 
@@ -82,6 +83,55 @@ def subtitle_remux_action(stream: dict[str, Any]) -> str:
     if codec == "copy":
         return "copy"
     return f"convert to {codec}"
+
+
+def quote_filter_path(path: Path) -> str:
+    value = str(path)
+    value = value.replace("\\", "\\\\").replace("'", "\\'")
+    return f"'{value}'"
+
+
+def selected_subtitle_for_burn(probe: dict[str, Any]) -> tuple[int, dict[str, Any]] | None:
+    subtitles = probe.get("subtitle_streams") or []
+    if not subtitles:
+        return None
+    for order, stream in enumerate(subtitles):
+        disposition = stream.get("disposition") or {}
+        if disposition.get("default"):
+            return order, stream
+    return 0, subtitles[0]
+
+
+def subtitle_warning(stream: dict[str, Any], profile_id: str, action: str) -> str:
+    index = stream.get("index")
+    codec = subtitle_codec(stream) or "unknown"
+    if action == "burn":
+        return f"Subtitle stream #{index} codec {codec} was burned into video for profile {profile_id}."
+    return f"Subtitle stream #{index} codec {codec} was dropped; bitmap/OCR subtitle conversion is not supported."
+
+
+def convert_subtitle_plan(
+    *,
+    input_path: Path,
+    profile: dict[str, Any],
+    probe: dict[str, Any],
+) -> dict[str, Any]:
+    profile_id = str(profile["id"])
+    container = str(profile["container"])
+    selected = selected_subtitle_for_burn(probe)
+    if selected is None:
+        return {"maps": [], "video_filter_suffix": "", "warnings": []}
+
+    subtitle_order, stream = selected
+    codec = subtitle_codec(stream)
+    if container == "avi" and codec == "xsub":
+        return {"maps": ["-map", f"0:{stream['index']}"], "video_filter_suffix": "", "warnings": []}
+    if container == "vob" and codec == "dvd_subtitle":
+        return {"maps": ["-map", f"0:{stream['index']}"], "video_filter_suffix": "", "warnings": []}
+    if codec in TEXT_SUBTITLE_CODECS:
+        suffix = f",subtitles=filename={quote_filter_path(input_path)}:si={subtitle_order}"
+        return {"maps": [], "video_filter_suffix": suffix, "warnings": [subtitle_warning(stream, profile_id, "burn")]}
+    return {"maps": [], "video_filter_suffix": "", "warnings": [subtitle_warning(stream, profile_id, "drop")]}
 
 
 def build_remux_args(
@@ -173,9 +223,11 @@ def output_fps(profile: dict[str, Any], probe: dict[str, Any]) -> float:
     return min(source_fps, float(video.get("max_fps") or source_fps))
 
 
-def build_convert_args(input_path: Path, output_path: Path, profile: dict[str, Any], probe: dict[str, Any]) -> list[str]:
+def build_convert_plan(input_path: Path, output_path: Path, profile: dict[str, Any], probe: dict[str, Any]) -> dict[str, Any]:
     video = profile["video"]
     audio = profile["audio"]
+    subtitle_plan = convert_subtitle_plan(input_path=input_path, profile=profile, probe=probe)
+    vf = video_filter(profile, probe) + subtitle_plan["video_filter_suffix"]
     args = [
         "ffmpeg",
         "-y",
@@ -185,14 +237,12 @@ def build_convert_args(input_path: Path, output_path: Path, profile: dict[str, A
         "0:v:0",
         "-map",
         "0:a?",
-        "-map",
-        "0:s?",
         "-map_chapters",
         "0",
         "-map_metadata",
         "0",
         "-vf",
-        video_filter(profile, probe),
+        vf,
         "-r",
         str(output_fps(profile, probe)),
         "-c:v",
@@ -211,12 +261,17 @@ def build_convert_args(input_path: Path, output_path: Path, profile: dict[str, A
         str(audio["channels"]),
         "-b:a",
         f"{audio['bitrate_kbps']}k",
-        "-c:s",
-        "copy",
     ]
+    args[8:8] = subtitle_plan["maps"]
+    if subtitle_plan["maps"]:
+        args += ["-c:s", "copy"]
     if video.get("fourcc"):
         args += ["-vtag", video["fourcc"]]
     if profile["container"] == "vob":
         args += ["-f", "vob"]
     args.append(str(output_path))
-    return args
+    return {"args": args, "warnings": subtitle_plan["warnings"]}
+
+
+def build_convert_args(input_path: Path, output_path: Path, profile: dict[str, Any], probe: dict[str, Any]) -> list[str]:
+    return build_convert_plan(input_path, output_path, profile, probe)["args"]
