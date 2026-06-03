@@ -172,7 +172,11 @@ Remux command policy:
     reject image subtitles before FFmpeg
     exactly one selected default audio stream when requested
 
-After FFmpeg succeeds, the service runs `exiftool -overwrite_original` on the final MP4 artifact under `/data/current/output` only. This writes best-effort player-compatible QuickTime/iTunes/UserData/Keys metadata aliases for the same user-entered fields. No arbitrary ExifTool flags come from the user.
+After FFmpeg succeeds, the service runs metadata post-processing on the final MP4 artifact under `/data/current/output` only. No arbitrary ExifTool or TagLib flags come from the user.
+
+The first layer uses `exiftool -overwrite_original` to write best-effort player-compatible QuickTime/iTunes/UserData/Keys metadata aliases for the same user-entered fields. This preserves the broad Apple/Finder/IINA-visible behavior.
+
+The second layer uses `/usr/local/bin/taglib-mp4-writer` to write TagLib-compatible MP4 properties matching VLC Save Metadata behavior for fields such as `publisher` and `language`.
 
 The same ExifTool pass removes FFmpeg/libavformat Encoder tags such as `Lavf...` from known QuickTime-family locations.
 
@@ -190,7 +194,7 @@ One UI field may be duplicated into several recognized MP4 tag families so commo
 
 The `description` field is written to Description and LongDescription-style tags. Comment-style aliases are intentionally skipped because some MP4 readers display UTF-8 comment aliases as mojibake.
 
-The `publisher` field is written best-effort to multiple Publisher and Producer-style QuickTime-compatible aliases. Player support varies. Player Language fields normally come from audio/subtitle stream language metadata; the global UI language field is warning-only unless a safe descriptive global language tag is added later.
+The `publisher` field is written best-effort to multiple Publisher and Producer-style QuickTime-compatible aliases, then through the TagLib layer for VLC compatibility. Player Language fields normally come from audio/subtitle stream language metadata; the global UI language field is also written through the TagLib layer as best-effort descriptive metadata.
 
 Selected audio/subtitle stream language and title/name tags are restored from probe data as much as MP4 supports. Text subtitles that MP4 cannot copy directly, including SubRip/SRT, ASS/SSA, and WebVTT, are converted to `mov_text`. Image subtitles such as DVD subtitles or PGS fail before FFmpeg because OCR is out of scope for v1. Per-stream metadata editing is not in v1: stream tags are not taken from the user-entered global metadata fields.
 

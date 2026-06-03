@@ -237,13 +237,13 @@ If a remux failure shows a Python `UnicodeDecodeError`, the process-output decod
 
 ### MP4 Remux Player Metadata
 
-When remux metadata fields are filled, FFmpeg writes basic MP4 metadata during mux and ExifTool post-processes the final MP4 with QuickTime/iTunes/UserData/Keys-compatible tags. Check that the job can enter `writing_metadata` and complete without leaving `*_original` backup artifacts.
+When remux metadata fields are filled, FFmpeg writes basic MP4 metadata during mux, ExifTool post-processes the final MP4 with QuickTime/iTunes/UserData/Keys-compatible tags, and the TagLib-compatible writer adds VLC-style Publisher/Language properties. Check that the job can enter `writing_metadata` and complete without leaving `*_original` backup artifacts.
 
 Metadata display is player-controlled. Validate at least one common desktop player or Finder/QuickTime path if this behavior is the focus of the rollout. Large MP4 files may spend extra time in metadata post-processing because the container can be rewritten.
 
 The description field should appear through Description/LongDescription-style tags. Comment-style aliases are intentionally skipped because some MP4 readers display UTF-8 comment aliases as mojibake.
 
-Final MP4 artifacts should not show FFmpeg/libavformat Encoder values such as `Lavf...`. Publisher is written to multiple best-effort Publisher/Producer-style aliases, but some players may still hide it. Player Language fields usually come from selected audio/subtitle stream language tags, not the global UI language field.
+Final MP4 artifacts should not show FFmpeg/libavformat Encoder values such as `Lavf...`. Publisher is written to multiple best-effort Publisher/Producer-style aliases and through the TagLib-compatible layer. Player Language fields usually come from selected audio/subtitle stream language tags; the global UI language is also written through the TagLib-compatible layer for VLC-style display.
 
 ### Batch Profile Subtitle Handling
 

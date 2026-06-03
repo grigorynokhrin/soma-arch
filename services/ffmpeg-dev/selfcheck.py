@@ -10,6 +10,7 @@ from command_builder import (
     build_convert_plan,
     build_mp4_player_metadata_command,
     build_remux_args,
+    build_taglib_mp4_metadata_command,
     decode_process_bytes,
     ensure_output_artifact_path,
     ensure_clear_target,
@@ -371,6 +372,38 @@ def main() -> None:
     assert not any("raw_args" in item or "-unsafe" in item for item in exiftool)
     assert metadata_plan["warnings"]
     assert "player language fields usually come from audio/subtitle stream languages" in metadata_plan["warnings"][0]
+
+    taglib = build_taglib_mp4_metadata_command(
+        Path("/tmp/ffmpeg-data/current/output/Queen of the Damned.mp4"),
+        {
+            "title": "Queen of the Damned",
+            "artist": "Rymer & Abbott, Petroni",
+            "genre": "RU-EN",
+            "description": "Русский текст",
+            "publisher": "Village Roadshow Pictures",
+            "language": "RU-EN",
+            "raw_args": "-unsafe",
+        },
+        Path("/tmp/ffmpeg-data/current/output"),
+    )
+    assert taglib[0] == "/usr/local/bin/taglib-mp4-writer"
+    assert taglib[1] == "/tmp/ffmpeg-data/current/output/Queen of the Damned.mp4"
+    assert "--publisher" in taglib
+    assert taglib[taglib.index("--publisher") + 1] == "Village Roadshow Pictures"
+    assert "--language" in taglib
+    assert taglib[taglib.index("--language") + 1] == "RU-EN"
+    assert "--description" not in taglib
+    assert not any("Comment" in item for item in taglib)
+    assert not any("raw_args" in item or "-unsafe" in item for item in taglib)
+    try:
+        build_taglib_mp4_metadata_command(
+            Path("/tmp/ffmpeg-data/current/input/Queen of the Damned.mp4"),
+            {"publisher": "Village Roadshow Pictures"},
+            Path("/tmp/ffmpeg-data/current/output"),
+        )
+        raise AssertionError("TagLib metadata path outside output dir should fail")
+    except RuntimeError:
+        pass
 
     print("selfcheck ok: profiles and command construction validated")
 

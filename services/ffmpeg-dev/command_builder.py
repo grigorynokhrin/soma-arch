@@ -6,6 +6,7 @@ from typing import Any
 
 ALLOWED_METADATA_KEYS = {"title", "artist", "date", "genre", "language", "description", "publisher"}
 BASIC_MP4_METADATA_KEYS = {"title", "artist", "date", "genre", "description", "publisher"}
+TAGLIB_MP4_METADATA_KEYS = {"title", "artist", "genre", "publisher", "language"}
 MP4_ENCODER_DELETE_TAGS = ["QuickTime:Encoder", "ItemList:Encoder", "UserData:Encoder", "Keys:Encoder"]
 MP4_PLAYER_METADATA_TAGS = {
     "title": ["ItemList:Title", "UserData:Title", "Keys:Title", "Keys:DisplayName"],
@@ -109,6 +110,17 @@ def build_mp4_player_metadata_command(output_path: Path, metadata: dict[str, str
 
     args.append(str(output_path))
     return {"args": args, "warnings": warnings}
+
+
+def build_taglib_mp4_metadata_command(output_path: Path, metadata: dict[str, str], output_root: Path | None = None) -> list[str]:
+    if output_root is not None:
+        ensure_output_artifact_path(output_root, output_path)
+
+    args = ["/usr/local/bin/taglib-mp4-writer", str(output_path)]
+    for key, value in clean_metadata(metadata).items():
+        if key in TAGLIB_MP4_METADATA_KEYS:
+            args += [f"--{key}", value]
+    return args
 
 
 def rational_to_float(value: str | None) -> float | None:
