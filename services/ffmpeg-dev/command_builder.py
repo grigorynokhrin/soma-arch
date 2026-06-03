@@ -48,10 +48,12 @@ def build_remux_args(
     for idx in subtitle_streams:
         args += ["-map", f"0:{idx}"]
 
-    args += ["-c", "copy", "-map_chapters", "0"]
+    args += ["-c", "copy", "-map_chapters", "0", "-map_metadata", "-1"]
     for key, value in metadata.items():
         if key in ALLOWED_METADATA_KEYS and value.strip():
             args += ["-metadata", f"{key}={value.strip()}"]
+
+    args += ["-movflags", "use_metadata_tags"]
 
     for out_audio_idx, source_idx in enumerate(audio_streams):
         disposition = "default" if source_idx == default_audio_stream else "0"

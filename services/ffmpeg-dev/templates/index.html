@@ -81,12 +81,34 @@
         <input id="output_name" name="output_name" value="remuxed">
 
         <div class="grid">
-          {% for key in metadata_keys %}
           <div>
-            <label for="meta_{{ key }}">{{ key }}</label>
-            <input id="meta_{{ key }}" name="{{ key }}">
+            <label for="meta_title">title</label>
+            <input id="meta_title" name="title">
           </div>
-          {% endfor %}
+          <div>
+            <label for="meta_artist">artist</label>
+            <input id="meta_artist" name="artist">
+          </div>
+          <div>
+            <label for="meta_date">date</label>
+            <input id="meta_date" name="date">
+          </div>
+          <div>
+            <label for="meta_genre">genre</label>
+            <input id="meta_genre" name="genre">
+          </div>
+          <div>
+            <label for="meta_language">language</label>
+            <input id="meta_language" name="language">
+          </div>
+          <div>
+            <label for="meta_description">description</label>
+            <input id="meta_description" name="description">
+          </div>
+          <div>
+            <label for="meta_publisher">publisher</label>
+            <input id="meta_publisher" name="publisher">
+          </div>
         </div>
 
         <button type="submit">Remux to MP4</button>

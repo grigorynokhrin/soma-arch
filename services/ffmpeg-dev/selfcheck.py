@@ -44,6 +44,11 @@ def assert_contains(args: list[str], *items: str) -> None:
         assert item in args, f"{item!r} missing from command: {args}"
 
 
+def assert_pair(args: list[str], key: str, value: str) -> None:
+    pairs = list(zip(args, args[1:]))
+    assert (key, value) in pairs, f"{key} {value} missing from command: {args}"
+
+
 def assert_video_filter(args: list[str], fragment: str) -> None:
     vf = value_after(args, "-vf")
     assert fragment in vf, f"{fragment!r} missing from filter: {vf}"
@@ -144,9 +149,17 @@ def main() -> None:
         subtitle_streams=[3],
         metadata={"title": "Kept", "raw_args": "-filter_complex unsafe", "genre": "Live"},
     )
-    assert_contains(remux, "-c", "copy", "-map_chapters", "0")
+    assert_contains(remux, "-c", "copy", "-map_chapters", "0", "-map_metadata", "-1", "-movflags", "use_metadata_tags")
+    assert_pair(remux, "-map_chapters", "0")
+    assert_pair(remux, "-map_metadata", "-1")
+    assert_pair(remux, "-movflags", "use_metadata_tags")
+    assert ("-map_metadata", "0") not in list(zip(remux, remux[1:]))
     assert "-c:v" not in remux
     assert "-c:a" not in remux
+    assert not any(item.startswith("-metadata:s") for item in remux)
+    assert not any(item.startswith("-metadata:a") for item in remux)
+    assert not any(item.startswith("-metadata:s:") for item in remux)
+    assert not any(item.startswith("-metadata:a:") for item in remux)
     assert "-filter_complex unsafe" not in " ".join(remux)
     assert "raw_args=-filter_complex unsafe" not in remux
     assert "-metadata" in remux

@@ -112,10 +112,24 @@ Remux command policy:
     map selected subtitle streams
     -c copy
     -map_chapters 0
-    allowlisted -metadata fields only
+    -map_metadata -1 for old global/container metadata
+    allowlisted user-entered -metadata fields only
+    -movflags use_metadata_tags
     exactly one selected default audio stream when requested
 
-Remux mode does not transcode. If FFmpeg cannot mux a selected stream into MP4, the job fails and shows a concise stderr excerpt.
+Remux mode does not transcode. It preserves chapters/parts, wipes old global/container metadata, and writes only user-entered allowlisted global metadata:
+
+    title
+    artist
+    date
+    genre
+    language
+    description
+    publisher
+
+Selected audio/subtitle stream names, titles, and language tags are not intentionally cleared or rewritten in v1; FFmpeg/MP4 muxing behavior still applies. Per-stream metadata editing is not in v1. MP4/player visibility of some global metadata fields is container/player-dependent.
+
+If FFmpeg cannot mux a selected stream into MP4, the job fails and shows a concise stderr excerpt.
 
 Known limitation:
 

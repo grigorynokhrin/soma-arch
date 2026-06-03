@@ -293,7 +293,7 @@ Example command generation shape:
     "behavior": "copy_selected"
   },
   "metadata": {
-    "behavior": "copy_safe"
+    "behavior": "manual_global_only"
   },
   "output_stem": "movie-clean"
 }
@@ -306,6 +306,29 @@ The service code should turn this into an args list like:
 ```
 
 The UI may show a read-only preview of generated settings later, but not an editable raw command.
+
+MP4 remux metadata policy:
+
+- preserve selected video/audio/subtitle streams with stream copy
+- preserve chapters/parts with `-map_chapters 0`
+- do not copy old global/container metadata from source media
+- do not merge old global/container metadata with new metadata
+- write only manually entered allowlisted global metadata fields
+- use `-movflags use_metadata_tags` for MP4 remux output
+- do not intentionally clear or rewrite selected stream-level title/name/language tags
+- keep default audio disposition controlled by the UI
+
+The fixed global metadata allowlist is:
+
+- `title`
+- `artist`
+- `date`
+- `genre`
+- `language`
+- `description`
+- `publisher`
+
+Chapters are not considered user metadata for this policy and must remain preserved. MP4/player visibility of some global metadata fields is container/player-dependent. Per-stream metadata editing is not in v1.
 
 ## Allowlists
 
