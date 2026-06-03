@@ -210,10 +210,10 @@
     <div><strong>Overlap:</strong> {{ overlap_sec }} сек</div>
     <div><strong>Чанков:</strong> {{ chunks_count or '—' }}</div>
     {% if txt_file %}
-    <div><strong>TXT:</strong> <a href="/myservices/whisper/outputs/{{ txt_file }}" target="_blank">{{ txt_file }}</a></div>
+    <div><strong>TXT:</strong> <a href="{{ root_path }}/outputs/{{ txt_file }}" target="_blank">{{ txt_file }}</a></div>
     {% endif %}
     {% if srt_file %}
-    <div><strong>SRT:</strong> <a href="/myservices/whisper/outputs/{{ srt_file }}" target="_blank">{{ srt_file }}</a></div>
+    <div><strong>SRT:</strong> <a href="{{ root_path }}/outputs/{{ srt_file }}" target="_blank">{{ srt_file }}</a></div>
     {% endif %}
   </div>
 

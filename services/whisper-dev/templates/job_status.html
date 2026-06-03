@@ -88,7 +88,7 @@
 
   <div class="card" id="action_card">
     {% if job.status == "done" %}
-      <a id="result_link" href="/myservices/whisper/jobs/{{ job.job_id }}/result">Открыть результат →</a>
+      <a id="result_link" href="{{ root_path }}/jobs/{{ job.job_id }}/result">Открыть результат →</a>
       <span id="running_hint" class="muted hidden">Идёт обработка…</span>
       <span id="error_hint" class="err hidden">Job завершился с ошибкой.</span>
     {% elif job.status == "error" %}
@@ -103,13 +103,14 @@
   </div>
 
   <div class="card">
-    <a href="/myservices/whisper/">← Назад в Whisper</a>
+    <a href="{{ root_path }}/">← Назад в Whisper</a>
   </div>
 
   <script>
     const jobId = {{ job.job_id|tojson }};
-    const statusUrl = `/myservices/whisper/jobs/${jobId}/status.json`;
-    const resultUrl = `/myservices/whisper/jobs/${jobId}/result`;
+    const rootPath = {{ root_path|tojson }};
+    const statusUrl = `${rootPath}/jobs/${jobId}/status.json`;
+    const resultUrl = `${rootPath}/jobs/${jobId}/result`;
 
     const els = {
       status: document.getElementById('status'),

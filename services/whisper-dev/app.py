@@ -16,6 +16,7 @@ from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
 ROOT_PATH = os.getenv("WHISPER_ROOT_PATH", "/whisper-dev")
+TEMPLATE_ROOT_PATH = ROOT_PATH.rstrip("/")
 
 OUTPUT_DIR = Path(os.getenv("WHISPER_OUTPUT_DIR", "/app/outputs"))
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -29,6 +30,7 @@ RETENTION_MAX_JOBS = int(os.getenv("WHISPER_RETENTION_MAX_JOBS", "5"))
 
 app = FastAPI(root_path=ROOT_PATH)
 templates = Jinja2Templates(directory="templates")
+templates.env.globals["root_path"] = TEMPLATE_ROOT_PATH
 
 _model_cache: dict[tuple[str, str], tuple[WhisperModel, str]] = {}
 

@@ -93,7 +93,7 @@
 
   <div class="card">
     {% if job.status == "done" %}
-      <a href="/myservices/whisper/jobs/{{ job.job_id }}/result">Открыть результат →</a>
+      <a href="{{ root_path }}/jobs/{{ job.job_id }}/result">Открыть результат →</a>
     {% elif job.status == "error" %}
       <span class="err">Job завершился с ошибкой.</span>
     {% else %}
@@ -102,7 +102,7 @@
   </div>
 
   <div class="card">
-    <a href="/myservices/whisper/">← Назад в Whisper</a>
+    <a href="{{ root_path }}/">← Назад в Whisper</a>
   </div>
 </body>
 </html>

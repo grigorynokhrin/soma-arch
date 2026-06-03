@@ -51,12 +51,12 @@
     <div><strong>Чанков:</strong> {{ job.chunks_count or "—" }}</div>
     <div><strong>TXT:</strong>
       {% if job.txt_file %}
-        <a href="/myservices/whisper/jobs/{{ job.job_id }}/artifacts/{{ job.txt_file }}" target="_blank">{{ job.txt_file }}</a>
+        <a href="{{ root_path }}/jobs/{{ job.job_id }}/artifacts/{{ job.txt_file }}" target="_blank">{{ job.txt_file }}</a>
       {% else %}—{% endif %}
     </div>
     <div><strong>SRT:</strong>
       {% if job.srt_file %}
-        <a href="/myservices/whisper/jobs/{{ job.job_id }}/artifacts/{{ job.srt_file }}" target="_blank">{{ job.srt_file }}</a>
+        <a href="{{ root_path }}/jobs/{{ job.job_id }}/artifacts/{{ job.srt_file }}" target="_blank">{{ job.srt_file }}</a>
       {% else %}—{% endif %}
     </div>
   </div>
@@ -67,11 +67,11 @@
   </div>
 
   <div class="card">
-    <a href="/myservices/whisper/jobs/{{ job.job_id }}">← Назад к статусу job</a>
+    <a href="{{ root_path }}/jobs/{{ job.job_id }}">← Назад к статусу job</a>
   </div>
 
   <div class="card">
-    <a href="/myservices/whisper/">← Назад в Whisper</a>
+    <a href="{{ root_path }}/">← Назад в Whisper</a>
   </div>
 </body>
 </html>
