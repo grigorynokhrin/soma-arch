@@ -19,7 +19,6 @@ from command_builder import (
     build_convert_plan,
     build_mp4_player_metadata_command,
     build_remux_args,
-    build_taglib_mp4_metadata_command,
     decode_process_bytes,
     ensure_clear_target,
     safe_filename_component,
@@ -322,9 +321,7 @@ async def remux_run(
     artist: str = Form(default=""),
     date: str = Form(default=""),
     genre: str = Form(default=""),
-    language: str = Form(default=""),
     description: str = Form(default=""),
-    publisher: str = Form(default=""),
 ):
     with ACTIVE_JOB_LOCK:
         job = current_job()
@@ -345,9 +342,7 @@ async def remux_run(
             "artist": artist,
             "date": date,
             "genre": genre,
-            "language": language,
             "description": description,
-            "publisher": publisher,
         }
 
         job.update({"status": "running", "stage": "remuxing", "started_at": job.get("started_at") or now_iso(), "error": None})
@@ -374,18 +369,6 @@ async def remux_run(
                 save_job(job)
                 try:
                     run_checked(metadata_plan["args"])
-                except Exception as e:
-                    raise RuntimeError(f"MP4 metadata post-processing failed: {e}") from e
-            taglib_args = build_taglib_mp4_metadata_command(output_path, metadata, OUTPUT_DIR)
-            if len(taglib_args) > 2:
-                job.update({"stage": "writing_metadata", "warnings": warnings})
-                save_job(job)
-                try:
-                    run_checked(taglib_args)
-                except Exception as e:
-                    raise RuntimeError(f"MP4 VLC metadata post-processing failed: {e}") from e
-                try:
-                    run_checked(build_mp4_player_metadata_command(output_path, {}, OUTPUT_DIR)["args"])
                 except Exception as e:
                     raise RuntimeError(f"MP4 metadata post-processing failed: {e}") from e
             artifact = {"name": output_path.name, "path": str(output_path), "kind": "mp4", "size_bytes": output_path.stat().st_size}

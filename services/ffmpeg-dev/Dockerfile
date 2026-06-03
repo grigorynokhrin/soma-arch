@@ -1,16 +1,3 @@
-FROM python:3.12-slim-bookworm AS taglib-builder
-
-WORKDIR /build
-
-ENV DEBIAN_FRONTEND=noninteractive
-
-RUN apt-get update \
-  && apt-get install -y --no-install-recommends g++ pkg-config libtag1-dev ca-certificates \
-  && rm -rf /var/lib/apt/lists/*
-
-COPY taglib_mp4_writer.cpp .
-RUN g++ -std=c++17 taglib_mp4_writer.cpp -o /usr/local/bin/taglib-mp4-writer $(pkg-config --cflags --libs taglib)
-
 FROM python:3.12-slim-bookworm
 
 WORKDIR /app
@@ -26,10 +13,8 @@ ENV FFMPEG_ROOT_PATH=/ffmpeg-dev
 ENV FFMPEG_DATA_DIR=/data
 
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends ffmpeg ca-certificates libimage-exiftool-perl libtag1v5 \
+  && apt-get install -y --no-install-recommends ffmpeg ca-certificates libimage-exiftool-perl \
   && rm -rf /var/lib/apt/lists/*
-
-COPY --from=taglib-builder /usr/local/bin/taglib-mp4-writer /usr/local/bin/taglib-mp4-writer
 
 COPY requirements.txt .
 RUN python -m pip install --upgrade pip setuptools wheel \

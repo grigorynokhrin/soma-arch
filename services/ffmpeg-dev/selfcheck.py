@@ -5,12 +5,12 @@ import json
 import re
 
 from command_builder import (
+    ALLOWED_METADATA_KEYS,
     IMAGE_SUBTITLE_ERROR,
     build_convert_args,
     build_convert_plan,
     build_mp4_player_metadata_command,
     build_remux_args,
-    build_taglib_mp4_metadata_command,
     decode_process_bytes,
     ensure_output_artifact_path,
     ensure_clear_target,
@@ -147,6 +147,9 @@ def main() -> None:
         "lacie-ss-16x9-vob-pal",
         "lacie-ss-16x9-avi",
     }
+    assert ALLOWED_METADATA_KEYS == {"title", "artist", "date", "genre", "description"}
+    assert "publisher" not in ALLOWED_METADATA_KEYS
+    assert "language" not in ALLOWED_METADATA_KEYS
 
     human_name = "2002 Queen of the Damned (RU-EN) Rymer & Abbott, Petroni.mp4"
     assert safe_output_filename(human_name, "remuxed", "mp4") == human_name
@@ -334,6 +337,7 @@ def main() -> None:
         {
             "title": "Queen of the Damned",
             "artist": "Rymer & Abbott, Petroni",
+            "date": "2002",
             "genre": "RU-EN",
             "description": "русский текст",
             "publisher": "Publisher & Co.",
@@ -355,55 +359,24 @@ def main() -> None:
     assert "-Keys:Title=Queen of the Damned" in exiftool
     assert "-ItemList:Artist=Rymer & Abbott, Petroni" in exiftool
     assert "-UserData:Author=Rymer & Abbott, Petroni" in exiftool
+    assert "-ItemList:ContentCreateDate=2002" in exiftool
     assert "-ItemList:Genre=RU-EN" in exiftool
     assert "-ItemList:Description=русский текст" in exiftool
     assert "-ItemList:LongDescription=русский текст" in exiftool
     assert "-UserData:Description=русский текст" in exiftool
     assert "-Keys:Description=русский текст" in exiftool
     assert not any("Comment=" in item for item in exiftool)
-    assert "-ItemList:Publisher=Publisher & Co." in exiftool
-    assert "-UserData:Publisher=Publisher & Co." in exiftool
-    assert "-QuickTime:Publisher=Publisher & Co." in exiftool
-    assert "-Keys:Publisher=Publisher & Co." in exiftool
-    assert "-ItemList:Producer=Publisher & Co." in exiftool
-    assert "-UserData:Producer=Publisher & Co." in exiftool
-    assert "-Keys:Producer=Publisher & Co." in exiftool
-    assert not any("Language=" in item for item in exiftool)
+    assert not any("Publisher" in item for item in exiftool)
+    assert not any("Producer" in item for item in exiftool)
+    assert not any("LANGUAGE" in item or "Language" in item for item in exiftool)
+    assert not any("taglib" in item.lower() for item in exiftool)
     assert not any("raw_args" in item or "-unsafe" in item for item in exiftool)
-    assert metadata_plan["warnings"]
-    assert "player language fields usually come from audio/subtitle stream languages" in metadata_plan["warnings"][0]
+    assert metadata_plan["warnings"] == []
 
-    taglib = build_taglib_mp4_metadata_command(
-        Path("/tmp/ffmpeg-data/current/output/Queen of the Damned.mp4"),
-        {
-            "title": "Queen of the Damned",
-            "artist": "Rymer & Abbott, Petroni",
-            "genre": "RU-EN",
-            "description": "Русский текст",
-            "publisher": "Village Roadshow Pictures",
-            "language": "RU-EN",
-            "raw_args": "-unsafe",
-        },
-        Path("/tmp/ffmpeg-data/current/output"),
-    )
-    assert taglib[0] == "/usr/local/bin/taglib-mp4-writer"
-    assert taglib[1] == "/tmp/ffmpeg-data/current/output/Queen of the Damned.mp4"
-    assert "--publisher" in taglib
-    assert taglib[taglib.index("--publisher") + 1] == "Village Roadshow Pictures"
-    assert "--language" in taglib
-    assert taglib[taglib.index("--language") + 1] == "RU-EN"
-    assert "--description" not in taglib
-    assert not any("Comment" in item for item in taglib)
-    assert not any("raw_args" in item or "-unsafe" in item for item in taglib)
-    try:
-        build_taglib_mp4_metadata_command(
-            Path("/tmp/ffmpeg-data/current/input/Queen of the Damned.mp4"),
-            {"publisher": "Village Roadshow Pictures"},
-            Path("/tmp/ffmpeg-data/current/output"),
-        )
-        raise AssertionError("TagLib metadata path outside output dir should fail")
-    except RuntimeError:
-        pass
+    template = (HERE / "templates" / "index.html").read_text(encoding="utf-8")
+    assert 'name="publisher"' not in template
+    assert 'name="language"' not in template
+    assert 'name="description"' in template
 
     print("selfcheck ok: profiles and command construction validated")
 

@@ -4,28 +4,19 @@ from pathlib import Path
 import re
 from typing import Any
 
-ALLOWED_METADATA_KEYS = {"title", "artist", "date", "genre", "language", "description", "publisher"}
-BASIC_MP4_METADATA_KEYS = {"title", "artist", "date", "genre", "description", "publisher"}
-TAGLIB_MP4_METADATA_KEYS = {"title", "artist", "genre", "publisher", "language"}
+ALLOWED_METADATA_KEYS = {"title", "artist", "date", "genre", "description"}
+BASIC_MP4_METADATA_KEYS = {"title", "artist", "date", "genre", "description"}
 MP4_ENCODER_DELETE_TAGS = ["QuickTime:Encoder", "ItemList:Encoder", "UserData:Encoder", "Keys:Encoder"]
 MP4_PLAYER_METADATA_TAGS = {
     "title": ["ItemList:Title", "UserData:Title", "Keys:Title", "Keys:DisplayName"],
     "artist": ["ItemList:Artist", "UserData:Artist", "Keys:Artist", "UserData:Author", "Keys:Author"],
+    "date": ["ItemList:ContentCreateDate"],
     "genre": ["ItemList:Genre", "UserData:Genre", "Keys:Genre"],
     "description": [
         "ItemList:Description",
         "ItemList:LongDescription",
         "UserData:Description",
         "Keys:Description",
-    ],
-    "publisher": [
-        "ItemList:Publisher",
-        "UserData:Publisher",
-        "QuickTime:Publisher",
-        "Keys:Publisher",
-        "ItemList:Producer",
-        "UserData:Producer",
-        "Keys:Producer",
     ],
 }
 MP4_SUBTITLE_COPY_CODECS = {"mov_text"}
@@ -95,12 +86,6 @@ def build_mp4_player_metadata_command(output_path: Path, metadata: dict[str, str
     warnings: list[str] = []
 
     for key, value in cleaned.items():
-        if key == "language":
-            warnings.append("Global language is written only as best-effort descriptive metadata; player language fields usually come from audio/subtitle stream languages.")
-            continue
-        if key == "date":
-            warnings.append("Date is kept as basic MP4 metadata only; no safe player-compatible ExifTool date alias is written.")
-            continue
         tags = MP4_PLAYER_METADATA_TAGS.get(key, [])
         if not tags:
             warnings.append(f"Metadata field {key} has no safe player-compatible ExifTool aliases in v1.")
@@ -110,17 +95,6 @@ def build_mp4_player_metadata_command(output_path: Path, metadata: dict[str, str
 
     args.append(str(output_path))
     return {"args": args, "warnings": warnings}
-
-
-def build_taglib_mp4_metadata_command(output_path: Path, metadata: dict[str, str], output_root: Path | None = None) -> list[str]:
-    if output_root is not None:
-        ensure_output_artifact_path(output_root, output_path)
-
-    args = ["/usr/local/bin/taglib-mp4-writer", str(output_path)]
-    for key, value in clean_metadata(metadata).items():
-        if key in TAGLIB_MP4_METADATA_KEYS:
-            args += [f"--{key}", value]
-    return args
 
 
 def rational_to_float(value: str | None) -> float | None:
