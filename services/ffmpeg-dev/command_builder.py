@@ -29,6 +29,24 @@ def first_video_stream(probe: dict[str, Any]) -> int:
     return int(videos[0]["index"])
 
 
+def stream_by_index(probe: dict[str, Any], group: str, index: int) -> dict[str, Any]:
+    for stream in probe.get(group) or []:
+        if int(stream.get("index", -1)) == index:
+            return stream
+    return {}
+
+
+def add_selected_stream_metadata(args: list[str], stream_spec: str, stream: dict[str, Any]) -> None:
+    language = (stream.get("language") or "").strip()
+    title = (stream.get("title") or "").strip()
+
+    if language:
+        args += [f"-metadata:s:{stream_spec}", f"language={language}"]
+    if title:
+        args += [f"-metadata:s:{stream_spec}", f"title={title}"]
+        args += [f"-metadata:s:{stream_spec}", f"handler_name={title}"]
+
+
 def build_remux_args(
     *,
     input_path: Path,
@@ -56,8 +74,12 @@ def build_remux_args(
     args += ["-movflags", "use_metadata_tags"]
 
     for out_audio_idx, source_idx in enumerate(audio_streams):
+        add_selected_stream_metadata(args, f"a:{out_audio_idx}", stream_by_index(probe, "audio_streams", source_idx))
         disposition = "default" if source_idx == default_audio_stream else "0"
         args += [f"-disposition:a:{out_audio_idx}", disposition]
+
+    for out_subtitle_idx, source_idx in enumerate(subtitle_streams):
+        add_selected_stream_metadata(args, f"s:{out_subtitle_idx}", stream_by_index(probe, "subtitle_streams", source_idx))
 
     args.append(str(output_path))
     return args

@@ -176,7 +176,7 @@ def stream_language(stream: dict[str, Any]) -> str | None:
 
 def stream_title(stream: dict[str, Any]) -> str | None:
     tags = stream.get("tags") or {}
-    return tags.get("title")
+    return tags.get("title") or tags.get("handler_name") or tags.get("name")
 
 
 def normalize_probe(raw: dict[str, Any]) -> dict[str, Any]:

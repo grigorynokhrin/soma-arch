@@ -127,7 +127,7 @@ Remux mode does not transcode. It preserves chapters/parts, wipes old global/con
     description
     publisher
 
-Selected audio/subtitle stream names, titles, and language tags are not intentionally cleared or rewritten in v1; FFmpeg/MP4 muxing behavior still applies. Per-stream metadata editing is not in v1. MP4/player visibility of some global metadata fields is container/player-dependent.
+Selected audio/subtitle stream language and title/name tags are restored from probe data as much as MP4 supports. Per-stream metadata editing is not in v1: stream tags are not taken from the user-entered global metadata fields. MP4/player visibility of some global metadata fields is container/player-dependent.
 
 If FFmpeg cannot mux a selected stream into MP4, the job fails and shows a concise stderr excerpt.
 

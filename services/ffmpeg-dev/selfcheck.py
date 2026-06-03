@@ -27,8 +27,28 @@ def fake_probe(avg_frame_rate: str = "24000/1001") -> dict:
                 "display_aspect_ratio": "16:9",
             }
         ],
-        "audio_streams": [{"index": 1, "codec_type": "audio"}, {"index": 2, "codec_type": "audio"}],
-        "subtitle_streams": [{"index": 3, "codec_type": "subtitle"}],
+        "audio_streams": [
+            {
+                "index": 1,
+                "codec_type": "audio",
+                "language": "eng",
+                "title": "English stream name must survive",
+            },
+            {
+                "index": 2,
+                "codec_type": "audio",
+                "language": "rus",
+                "title": "Russian stream name must survive",
+            },
+        ],
+        "subtitle_streams": [
+            {
+                "index": 3,
+                "codec_type": "subtitle",
+                "language": "eng",
+                "title": "English subtitles must survive",
+            }
+        ],
     }
 
 
@@ -156,10 +176,15 @@ def main() -> None:
     assert ("-map_metadata", "0") not in list(zip(remux, remux[1:]))
     assert "-c:v" not in remux
     assert "-c:a" not in remux
-    assert not any(item.startswith("-metadata:s") for item in remux)
-    assert not any(item.startswith("-metadata:a") for item in remux)
-    assert not any(item.startswith("-metadata:s:") for item in remux)
-    assert not any(item.startswith("-metadata:a:") for item in remux)
+    assert_pair(remux, "-metadata:s:a:0", "language=eng")
+    assert_pair(remux, "-metadata:s:a:0", "title=English stream name must survive")
+    assert_pair(remux, "-metadata:s:a:0", "handler_name=English stream name must survive")
+    assert_pair(remux, "-metadata:s:a:1", "language=rus")
+    assert_pair(remux, "-metadata:s:a:1", "title=Russian stream name must survive")
+    assert_pair(remux, "-metadata:s:a:1", "handler_name=Russian stream name must survive")
+    assert_pair(remux, "-metadata:s:s:0", "language=eng")
+    assert_pair(remux, "-metadata:s:s:0", "title=English subtitles must survive")
+    assert_pair(remux, "-metadata:s:s:0", "handler_name=English subtitles must survive")
     assert "-filter_complex unsafe" not in " ".join(remux)
     assert "raw_args=-filter_complex unsafe" not in remux
     assert "-metadata" in remux

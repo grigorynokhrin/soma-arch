@@ -315,7 +315,8 @@ MP4 remux metadata policy:
 - do not merge old global/container metadata with new metadata
 - write only manually entered allowlisted global metadata fields
 - use `-movflags use_metadata_tags` for MP4 remux output
-- do not intentionally clear or rewrite selected stream-level title/name/language tags
+- restore selected audio/subtitle stream language and title/name tags from probe data as much as MP4 supports
+- do not rewrite stream metadata from user global fields
 - keep default audio disposition controlled by the UI
 
 The fixed global metadata allowlist is:
