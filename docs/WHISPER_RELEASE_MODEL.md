@@ -102,6 +102,7 @@ Expected host ownership:
 Before promotion:
 
 - confirm the repo source commit intended for release
+- validate a prod-candidate with the production `WHISPER_ROOT_PATH` when route-sensitive behavior changes
 - confirm dev health is OK
 - confirm production health is OK before touching production
 - confirm Caddy route contract is unchanged
@@ -149,6 +150,23 @@ Expected final job behavior:
     SRT artifact exists
     artifact links use /myservices/whisper/jobs/.../artifacts/...
 
+For batch-capable releases, also run a real production batch smoke-test:
+
+    POST /myservices/whisper/submit with multiple files
+
+Expected batch behavior:
+
+    HTTP 303
+    Location: /myservices/whisper/jobs/<job-id>
+    is_batch: true
+    files_count matches submitted files
+    progress reaches done
+    input_files all reach done
+    one combined TXT artifact exists
+    no combined SRT is generated in batch v1
+    combined TXT has one header per file
+    file sections use the documented blank-line separator
+
 Also confirm the dev route remains healthy:
 
     curl -fsS http://127.0.0.1/whisper-dev/healthz
@@ -160,6 +178,10 @@ Rollback is an explicit recovery action only.
 Known rollback image for release `whisper-prod-2026.06.03`:
 
     myservices-whisper:rollback-20260603-093727
+
+Known rollback image for release `whisper-batch-v1-2026.06.03`:
+
+    myservices-whisper:rollback-20260603-133700
 
 Rollback reference:
 

@@ -2,6 +2,139 @@
 
 This document records controlled releases for the `soma` home-server architecture.
 
+## whisper-batch-v1-2026.06.03
+
+Status:
+
+    completed
+
+Date:
+
+    2026-06-03
+
+Source commit:
+
+    ae1e43b Add whisper batch upload v1
+
+Service:
+
+    myservices-whisper
+
+Route:
+
+    /myservices/whisper
+
+## Summary
+
+This release promoted Whisper batch upload v1 to real production.
+
+Production behavior added:
+
+- multiple files may be selected in one submit
+- one submit creates one job
+- files are processed sequentially
+- one combined TXT artifact is generated
+- no combined SRT is generated in v1
+- single-file mode remains supported
+
+The release rebuilt only service `whisper` from the existing dev-derived source path.
+
+The production route stayed:
+
+    /myservices/whisper
+
+Caddy and `home` were not changed.
+
+## Candidate Validation
+
+Before production rollout, a prod-candidate ran on:
+
+    127.0.0.1:18081
+
+Candidate root path:
+
+    /myservices/whisper
+
+Candidate validation:
+
+    browser live-test passed
+    server-side candidate job 865d20ef26a6 passed
+    candidate job had 3 files
+    candidate generated combined TXT
+    candidate generated no SRT
+    all candidate input_files were done
+    candidate, dev, and prod health were all OK before rollout
+
+## Production Validation
+
+Production smoke-test job:
+
+    26b034ed3272
+
+Submit path:
+
+    /myservices/whisper/submit
+
+Observed submit result:
+
+    HTTP 303
+    Location: /myservices/whisper/jobs/26b034ed3272
+
+Caddy was in the request path.
+
+Final job facts:
+
+    status: done
+    is_batch: true
+    files_count: 2
+    txt_file: 26b034ed3272-batch.txt
+    srt_file: null
+    progress: 2/2
+    input_files: both status done
+
+Combined TXT validation:
+
+    artifact had 2 file headers
+    4 blank line separator check passed
+
+Health validation:
+
+    prod health: ok
+    dev health: ok
+    cd /srv/soma && make health completed without hard failures
+
+## Backups And Rollback References
+
+Release backup directory:
+
+    /home/grigorynokhrin/myservices/backups/whisper-batch-v1-20260603-133700
+
+Rollback image tag:
+
+    myservices-whisper:rollback-20260603-133700
+
+Rollback reference:
+
+    cd /home/grigorynokhrin/myservices
+    docker compose stop whisper
+    docker tag myservices-whisper:rollback-20260603-133700 myservices-whisper
+    docker compose up -d --no-build whisper
+    curl -fsS http://127.0.0.1/myservices/whisper/healthz
+
+Rollback is an explicit operator action only.
+
+## Notes
+
+This release did not:
+
+- change Caddy
+- change the `/myservices/whisper` production route
+- change the `/whisper-dev` dev route
+- change production Compose ownership
+- introduce parallel transcription
+- introduce background workers or queues
+- add combined batch SRT
+
 ## whisper-prod-2026.06.03
 
 Status:
@@ -141,7 +274,7 @@ Rollback reference:
     cd /home/grigorynokhrin/myservices
     docker compose stop whisper
     docker tag myservices-whisper:rollback-20260603-093727 myservices-whisper
-    docker compose up -d whisper
+    docker compose up -d --no-build whisper
     curl -fsS http://127.0.0.1/myservices/whisper/healthz
 
 If permissions caused the problem, restore from the permission backup before restarting the service.

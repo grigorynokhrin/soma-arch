@@ -512,6 +512,14 @@ Release details:
     docs/RELEASES.md
     docs/WHISPER_RELEASE_MODEL.md
 
+As of release:
+
+    whisper-batch-v1-2026.06.03
+
+legacy/prod Whisper also supports batch upload v1 on the same production route.
+
+Batch v1 creates one job per multi-file submit, processes files sequentially, and produces one combined TXT artifact. Combined batch SRT is intentionally not part of v1.
+
 ## Recommended next phase
 
 Phase 2 should focus on product/runtime expansion, not emergency restructuring.
