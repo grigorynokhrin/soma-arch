@@ -303,6 +303,44 @@ Existing Whisper-specific files should remain valid:
     <job-id>-<safe-input-stem>.txt
     <job-id>-<safe-input-stem>.srt
 
+### Batch upload v1
+
+Batch upload v1 keeps one job directory for one submit action.
+
+Single-file jobs keep the existing fields and artifact behavior:
+
+- `filename`
+- `source_path`
+- `txt_file`
+- `srt_file`
+- `result_text`
+
+Batch jobs add:
+
+- `is_batch: true`
+- `files_count`
+- `input_files`
+
+Each `input_files` item uses:
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `index` | number | 1-based order within the submitted batch. |
+| `original_filename` | string | Browser filename after `Path(filename).name` sanitization. |
+| `source_path` | string | Saved source path inside the job directory. |
+| `status` | string | Per-file status such as `uploaded`, `running`, `done`, or `error`. |
+| `duration_min` | number or null | Per-file duration in minutes when known. |
+| `chunks_count` | number or null | Number of chunks transcribed for the file. |
+| `txt_chars` | number or null | Character count of the per-file transcript text. |
+
+Batch v1 output behavior:
+
+- files are processed sequentially, not in parallel
+- one combined TXT artifact is generated
+- combined TXT sections are separated by file headers and blank lines
+- no combined SRT is generated in v1
+- if one file fails, the whole job fails and records the filename in the error path/log
+
 Portal UI and shared job readers should therefore support two artifact locations:
 
 1. artifacts listed in `status.json`

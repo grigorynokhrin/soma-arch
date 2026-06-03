@@ -70,6 +70,9 @@ def create_job(
     beam: int,
     vad: bool,
     keep_tmp: bool,
+    is_batch: bool = False,
+    files_count: int = 1,
+    input_files: list[dict] | None = None,
 ) -> dict:
     job_id = uuid.uuid4().hex[:12]
     ensure_job_dir(job_id)
@@ -77,12 +80,15 @@ def create_job(
     data = {
         "job_id": job_id,
         "filename": filename,
+        "is_batch": is_batch,
+        "files_count": files_count,
+        "input_files": input_files or [],
         "status": "queued",
         "context_preset": context_preset,
         "transcription_context": transcription_context,
         "stage": "uploaded",
         "progress_current": 0,
-        "progress_total": 0,
+        "progress_total": files_count if is_batch else 0,
         "started_at": now_iso(),
         "finished_at": None,
         "error": None,
@@ -106,7 +112,7 @@ def create_job(
         "chunk_files": [],
     }
     save_job(data)
-    append_job_log(job_id, f"job created for file={filename}")
+    append_job_log(job_id, f"job created for file={filename} files_count={files_count}")
     return data
 
 
@@ -125,6 +131,18 @@ def save_job(data: dict):
 def update_job(job_id: str, **fields) -> dict:
     data = load_job(job_id)
     data.update(fields)
+    save_job(data)
+    return data
+
+
+def update_input_file(job_id: str, index: int, **fields) -> dict:
+    data = load_job(job_id)
+    input_files = data.get("input_files") or []
+    for item in input_files:
+        if item.get("index") == index:
+            item.update(fields)
+            break
+    data["input_files"] = input_files
     save_job(data)
     return data
 
@@ -422,138 +440,269 @@ def render_page(
             "txt_file": txt_file,
         },
     )
-def run_transcription_job(job_id: str):
-    job = load_job(job_id)
 
-    safe_name = Path(job["filename"]).name
-    stem = Path(safe_name).stem
-    work_dir = ensure_job_dir(job_id)
 
-    src_path = work_dir / safe_name
-    wav_path = work_dir / "audio_16k.wav"
-    jsonl_path = work_dir / "intermediate.jsonl"
+def transcribe_saved_file(
+    *,
+    job: dict,
+    source_path: Path,
+    original_filename: str,
+    processing_dir: Path,
+    file_index: int = 1,
+    files_count: int = 1,
+    progress_base: int = 0,
+    batch: bool = False,
+) -> dict:
+    job_id = job["job_id"]
+    safe_name = Path(original_filename).name
+    stem = Path(safe_name).stem or f"file-{file_index:03d}"
+    processing_dir.mkdir(parents=True, exist_ok=True)
+
+    if batch:
+        wav_path = processing_dir / "audio_16k.wav"
+        jsonl_path = processing_dir / "intermediate.jsonl"
+        chunk_prefix = f"{file_index:03d}-{stem}"
+    else:
+        wav_path = processing_dir / "audio_16k.wav"
+        jsonl_path = processing_dir / "intermediate.jsonl"
+        chunk_prefix = stem
+
+    update_fields = {
+        "status": "running",
+        "stage": f"processing file {file_index}/{files_count}" if batch else "uploaded",
+    }
+    if not batch:
+        update_fields.update(
+            {
+                "source_path": str(source_path),
+                "wav_path": str(wav_path),
+                "jsonl_path": str(jsonl_path),
+            }
+        )
+    update_job(job_id, **update_fields)
+
+    append_job_log(job_id, f"processing file {file_index}/{files_count}: {safe_name}")
+
+    append_job_log(job_id, f"probing duration: {safe_name}")
+    dur = ffprobe_duration(str(source_path))
+
+    append_job_log(job_id, f"converting to wav: {safe_name}")
+    update_job(job_id, stage=f"processing file {file_index}/{files_count}: converting" if batch else "converting")
+    transcode_to_pcm16_mono_16k(str(source_path), str(wav_path))
+
+    seg_sec = int(job["chunk_min"] * 60)
+    overlap_sec = int(job["overlap_sec"])
+
+    append_job_log(
+        job_id,
+        f"chunking file {file_index}/{files_count}: segment_sec={seg_sec}, overlap_sec={overlap_sec}",
+    )
+    update_job(job_id, stage=f"processing file {file_index}/{files_count}: chunking" if batch else "chunking")
+    chunks = split_wav_with_overlap(str(wav_path), seg_sec, overlap_sec, str(processing_dir))
+    if not chunks:
+        raise RuntimeError(f"{safe_name}: После нарезки не получено ни одного чанка.")
+
+    current_job = load_job(job_id)
+    old_total = int(current_job.get("progress_total") or 0)
+    remaining_files = max(0, files_count - file_index)
+    progress_total = max(old_total, progress_base + len(chunks) + remaining_files)
 
     update_job(
         job_id,
-        status="running",
-        stage="uploaded",
-        source_path=str(src_path),
-        wav_path=str(wav_path),
-        jsonl_path=str(jsonl_path),
+        chunks_count=progress_base + len(chunks) if batch else len(chunks),
+        progress_total=progress_total,
+        chunk_files=[str(Path(ch).name) for ch, _ in chunks] if not batch else current_job.get("chunk_files", []),
     )
+
+    append_job_log(job_id, f"loading model: {job['model_name']} / {job['compute_type']}")
+    model, used_ct = load_model_cached(job["model_name"], job["compute_type"])
+    update_job(job_id, used_compute=used_ct)
+
+    lang_param = None if job["language"] == "auto" else job["language"]
+    initial_prompt = (job.get("transcription_context") or "").strip() or None
+
+    parts_txt: List[str] = []
+    parts_srt: List[Tuple[float, float, str]] = []
+
+    update_job(job_id, stage=f"processing file {file_index}/{files_count}: transcribing" if batch else "transcribing")
+
+    with open(jsonl_path, "w", encoding="utf-8") as jf:
+        for ci, (ch, offset) in enumerate(chunks, 1):
+            append_job_log(job_id, f"transcribing file {file_index}/{files_count} chunk {ci}/{len(chunks)}: {Path(ch).name}")
+            start_t = time.time()
+
+            segments, info = model.transcribe(
+                ch,
+                language=lang_param,
+                beam_size=job["beam"],
+                initial_prompt=initial_prompt,
+                temperature=[0.0, 0.2, 0.4, 0.6],
+                compression_ratio_threshold=2.4,
+                log_prob_threshold=-1.0,
+                no_speech_threshold=0.6,
+                condition_on_previous_text=False,
+                vad_filter=job["vad"],
+                vad_parameters={"min_silence_duration_ms": 500},
+                word_timestamps=False,
+            )
+            segs = list(segments)
+
+            part_txt, part_srt = segments_to_txt_and_srt(segs, offset)
+            part_txt = dedupe_echo(part_txt, max_repeat=2)
+
+            parts_txt.append(part_txt)
+            parts_srt.extend(part_srt)
+
+            chunk_txt_name = f"{chunk_prefix}_chunk{ci:02d}.txt"
+            chunk_txt_path = processing_dir / chunk_txt_name
+            chunk_txt_path.write_text(part_txt, encoding="utf-8")
+
+            jf.write(
+                json.dumps(
+                    {
+                        "file_index": file_index,
+                        "filename": safe_name,
+                        "chunk": os.path.basename(ch),
+                        "time_offset": round(offset, 3),
+                        "detected_language": getattr(info, "language", None),
+                        "text": part_txt,
+                        "elapsed_sec": round(time.time() - start_t, 2),
+                    },
+                    ensure_ascii=False,
+                )
+                + "\n"
+            )
+
+            update_job(job_id, progress_current=progress_base + ci)
+            append_job_log(job_id, f"file {file_index}/{files_count} chunk {ci}/{len(chunks)} done")
+
+    file_txt_raw = "\n".join(parts_txt)
+    file_txt = dedupe_echo(file_txt_raw, max_repeat=2)
+
+    return {
+        "text": file_txt,
+        "srt_entries": parts_srt,
+        "duration_min": round(dur / 60, 1),
+        "chunks_count": len(chunks),
+        "source_path": str(source_path),
+        "wav_path": str(wav_path),
+        "jsonl_path": str(jsonl_path),
+        "used_compute": used_ct,
+    }
+
+
+def run_transcription_job(job_id: str):
+    job = load_job(job_id)
+    work_dir = ensure_job_dir(job_id)
+
+    update_job(job_id, status="running", stage="uploaded")
     append_job_log(job_id, "job started")
 
     try:
-        append_job_log(job_id, "probing duration")
-        dur = ffprobe_duration(str(src_path))
-        update_job(job_id, duration_min=round(dur / 60, 1))
+        if job.get("is_batch"):
+            input_files = job.get("input_files") or []
+            files_count = len(input_files)
+            sections: List[str] = []
+            progress_base = 0
+            total_duration = 0.0
+            total_chunks = 0
 
-        append_job_log(job_id, "converting to wav")
-        update_job(job_id, stage="converting")
-        transcode_to_pcm16_mono_16k(str(src_path), str(wav_path))
+            for item in input_files:
+                file_index = int(item["index"])
+                safe_name = Path(item["original_filename"]).name
+                update_input_file(job_id, file_index, status="running")
 
-        seg_sec = int(job["chunk_min"] * 60)
-        overlap_sec = int(job["overlap_sec"])
-
-        append_job_log(job_id, f"chunking: segment_sec={seg_sec}, overlap_sec={overlap_sec}")
-        update_job(job_id, stage="chunking")
-        chunks = split_wav_with_overlap(str(wav_path), seg_sec, overlap_sec, str(work_dir))
-        if not chunks:
-            raise RuntimeError("После нарезки не получено ни одного чанка.")
-
-        update_job(
-            job_id,
-            chunks_count=len(chunks),
-            progress_current=0,
-            progress_total=len(chunks),
-            chunk_files=[str(Path(ch).name) for ch, _ in chunks],
-        )
-
-        append_job_log(job_id, f"loading model: {job['model_name']} / {job['compute_type']}")
-        model, used_ct = load_model_cached(job["model_name"], job["compute_type"])
-        update_job(job_id, used_compute=used_ct)
-
-        lang_param = None if job["language"] == "auto" else job["language"]
-        initial_prompt = (job.get("transcription_context") or "").strip() or None
-
-        parts_txt: List[str] = []
-        parts_srt: List[Tuple[float, float, str]] = []
-
-        update_job(job_id, stage="transcribing")
-
-        with open(jsonl_path, "w", encoding="utf-8") as jf:
-            for ci, (ch, offset) in enumerate(chunks, 1):
-                append_job_log(job_id, f"transcribing chunk {ci}/{len(chunks)}: {Path(ch).name}")
-                start_t = time.time()
-
-                segments, info = model.transcribe(
-                    ch,
-                    language=lang_param,
-                    beam_size=job["beam"],
-                    initial_prompt=initial_prompt,
-                    temperature=[0.0, 0.2, 0.4, 0.6],
-                    compression_ratio_threshold=2.4,
-                    log_prob_threshold=-1.0,
-                    no_speech_threshold=0.6,
-                    condition_on_previous_text=False,
-                    vad_filter=job["vad"],
-                    vad_parameters={"min_silence_duration_ms": 500},
-                    word_timestamps=False,
-                )
-                segs = list(segments)
-
-                part_txt, part_srt = segments_to_txt_and_srt(segs, offset)
-                part_txt = dedupe_echo(part_txt, max_repeat=2)
-
-                parts_txt.append(part_txt)
-                parts_srt.extend(part_srt)
-
-                chunk_txt_name = f"{stem}_chunk{ci:02d}.txt"
-                chunk_txt_path = work_dir / chunk_txt_name
-                chunk_txt_path.write_text(part_txt, encoding="utf-8")
-
-                jf.write(
-                    json.dumps(
-                        {
-                            "chunk": os.path.basename(ch),
-                            "time_offset": round(offset, 3),
-                            "detected_language": getattr(info, "language", None),
-                            "text": part_txt,
-                            "elapsed_sec": round(time.time() - start_t, 2),
-                        },
-                        ensure_ascii=False,
+                try:
+                    result = transcribe_saved_file(
+                        job=load_job(job_id),
+                        source_path=Path(item["source_path"]),
+                        original_filename=safe_name,
+                        processing_dir=work_dir / f"file_{file_index:03d}",
+                        file_index=file_index,
+                        files_count=files_count,
+                        progress_base=progress_base,
+                        batch=True,
                     )
-                    + "\n"
+                except Exception as file_error:
+                    update_input_file(job_id, file_index, status="error")
+                    raise RuntimeError(f"{safe_name}: {file_error}") from file_error
+
+                progress_base += result["chunks_count"]
+                total_duration += result["duration_min"]
+                total_chunks += result["chunks_count"]
+                update_input_file(
+                    job_id,
+                    file_index,
+                    status="done",
+                    duration_min=result["duration_min"],
+                    chunks_count=result["chunks_count"],
+                    txt_chars=len(result["text"]),
                 )
 
-                update_job(job_id, progress_current=ci)
-                append_job_log(job_id, f"chunk {ci}/{len(chunks)} done")
+                sections.append(f"===== FILE {file_index}/{files_count}: {safe_name} =====\n\n{result['text']}")
 
-        append_job_log(job_id, "assembling final txt/srt")
-        update_job(job_id, stage="assembling")
+            append_job_log(job_id, "assembling combined batch txt")
+            update_job(job_id, stage="assembling")
 
-        file_txt_raw = "\n".join(parts_txt)
-        file_txt = dedupe_echo(file_txt_raw, max_repeat=2)
-        file_srt = merge_srt(parts_srt)
+            file_txt = "\n\n\n\n\n".join(sections)
+            txt_name = f"{job_id}-batch.txt"
+            txt_path = work_dir / txt_name
+            txt_path.write_text(file_txt, encoding="utf-8")
 
-        txt_name = f"{job_id}-{stem}.txt"
-        srt_name = f"{job_id}-{stem}.srt"
+            update_job(
+                job_id,
+                status="done",
+                stage="done",
+                finished_at=now_iso(),
+                result_text=file_txt,
+                txt_file=txt_name,
+                srt_file=None,
+                duration_min=round(total_duration, 1),
+                chunks_count=total_chunks,
+                progress_current=total_chunks,
+                progress_total=total_chunks,
+            )
+        else:
+            safe_name = Path(job["filename"]).name
+            stem = Path(safe_name).stem
+            src_path = work_dir / safe_name
 
-        txt_path = work_dir / txt_name
-        srt_path = work_dir / srt_name
+            result = transcribe_saved_file(
+                job=job,
+                source_path=src_path,
+                original_filename=safe_name,
+                processing_dir=work_dir,
+            )
 
-        txt_path.write_text(file_txt, encoding="utf-8")
-        srt_path.write_text(file_srt, encoding="utf-8")
+            append_job_log(job_id, "assembling final txt/srt")
+            update_job(job_id, stage="assembling")
 
-        update_job(
-            job_id,
-            status="done",
-            stage="done",
-            finished_at=now_iso(),
-            result_text=file_txt,
-            txt_file=txt_name,
-            srt_file=srt_name,
-        )
+            file_txt = result["text"]
+            file_srt = merge_srt(result["srt_entries"])
+
+            txt_name = f"{job_id}-{stem}.txt"
+            srt_name = f"{job_id}-{stem}.srt"
+
+            txt_path = work_dir / txt_name
+            srt_path = work_dir / srt_name
+
+            txt_path.write_text(file_txt, encoding="utf-8")
+            srt_path.write_text(file_srt, encoding="utf-8")
+
+            update_job(
+                job_id,
+                status="done",
+                stage="done",
+                finished_at=now_iso(),
+                result_text=file_txt,
+                txt_file=txt_name,
+                srt_file=srt_name,
+                duration_min=result["duration_min"],
+                chunks_count=result["chunks_count"],
+                wav_path=result["wav_path"],
+                jsonl_path=result["jsonl_path"],
+            )
+
         append_job_log(job_id, "job done")
         cleanup_old_jobs()
 
@@ -587,7 +736,7 @@ async def index(request: Request):
 async def submit(
     request: Request,
     background_tasks: BackgroundTasks,
-    audio_file: UploadFile | None = File(default=None),
+    audio_file: List[UploadFile] | None = File(default=None),
     language: str = Form(default="ru"),
     model_name: str = Form(default="medium"),
     compute_type: str = Form(default="float32"),
@@ -599,7 +748,9 @@ async def submit(
     vad: bool = Form(default=False),
     keep_tmp: bool = Form(default=False),
 ):
-    if not audio_file or not audio_file.filename:
+    uploaded_files = [item for item in (audio_file or []) if item and item.filename]
+
+    if not uploaded_files:
         return render_page(
             request,
             language=language,
@@ -651,12 +802,15 @@ async def submit(
             error="Overlap должен быть меньше длины чанка.",
         )
 
-    safe_name = Path(audio_file.filename).name
+    safe_names = [Path(item.filename).name for item in uploaded_files]
+    is_batch = len(uploaded_files) > 1
+    files_count = len(uploaded_files)
+    job_filename = f"{files_count} files" if is_batch else safe_names[0]
 
     resolved_context = trim_context_text(get_context_text(context_preset, context_text))
-    
+
     job = create_job(
-        filename=safe_name,
+        filename=job_filename,
         language=language,
         model_name=model_name,
         compute_type=compute_type,
@@ -667,14 +821,46 @@ async def submit(
         transcription_context=resolved_context,
         vad=vad,
         keep_tmp=keep_tmp,
+        is_batch=is_batch,
+        files_count=files_count,
     )
 
-    src_path = job_dir(job["job_id"]) / safe_name
-    with open(src_path, "wb") as f:
-        shutil.copyfileobj(audio_file.file, f)
+    work_dir = job_dir(job["job_id"])
 
-    update_job(job["job_id"], source_path=str(src_path))
-    append_job_log(job["job_id"], f"source uploaded: {safe_name}")
+    if is_batch:
+        inputs_dir = work_dir / "inputs"
+        inputs_dir.mkdir(parents=True, exist_ok=True)
+        input_files = []
+
+        for idx, upload in enumerate(uploaded_files, 1):
+            safe_name = safe_names[idx - 1]
+            saved_name = f"{idx:03d}-{safe_name}"
+            src_path = inputs_dir / saved_name
+            with open(src_path, "wb") as f:
+                shutil.copyfileobj(upload.file, f)
+
+            input_files.append(
+                {
+                    "index": idx,
+                    "original_filename": safe_name,
+                    "source_path": str(src_path),
+                    "status": "uploaded",
+                    "duration_min": None,
+                    "chunks_count": None,
+                    "txt_chars": None,
+                }
+            )
+            append_job_log(job["job_id"], f"source uploaded {idx}/{files_count}: {safe_name} -> {saved_name}")
+
+        update_job(job["job_id"], input_files=input_files, source_path=input_files[0]["source_path"])
+    else:
+        safe_name = safe_names[0]
+        src_path = work_dir / safe_name
+        with open(src_path, "wb") as f:
+            shutil.copyfileobj(uploaded_files[0].file, f)
+
+        update_job(job["job_id"], source_path=str(src_path))
+        append_job_log(job["job_id"], f"source uploaded: {safe_name}")
 
     background_tasks.add_task(run_transcription_job, job["job_id"])
 

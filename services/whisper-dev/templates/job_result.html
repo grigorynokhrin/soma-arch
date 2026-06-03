@@ -41,6 +41,9 @@
   <div class="card">
     <div><strong>Job ID:</strong> <span class="mono">{{ job.job_id }}</span></div>
     <div><strong>Файл:</strong> {{ job.filename }}</div>
+    {% if job.is_batch %}
+    <div><strong>Файлов:</strong> {{ job.files_count }}</div>
+    {% endif %}
     <div><strong>Модель:</strong> {{ job.model_name }}</div>
     <div><strong>Compute:</strong> {{ job.used_compute or job.compute_type }}</div>
     <div><strong>Chunk:</strong> {{ job.chunk_min }} мин</div>
@@ -57,9 +60,18 @@
     <div><strong>SRT:</strong>
       {% if job.srt_file %}
         <a href="{{ root_path }}/jobs/{{ job.job_id }}/artifacts/{{ job.srt_file }}" target="_blank">{{ job.srt_file }}</a>
-      {% else %}—{% endif %}
+      {% elif job.is_batch %}не создаётся для batch v1{% else %}—{% endif %}
     </div>
   </div>
+
+  {% if job.is_batch and job.input_files %}
+  <div class="card">
+    <div><strong>Batch files:</strong></div>
+    {% for item in job.input_files %}
+      <div class="mono">{{ item.index }}/{{ job.files_count }} {{ item.original_filename }} — {{ item.status }}</div>
+    {% endfor %}
+  </div>
+  {% endif %}
 
   <div class="card">
     <label for="result_text"><strong>Результат</strong></label>

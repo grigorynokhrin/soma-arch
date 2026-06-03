@@ -53,6 +53,9 @@
   <div class="card">
     <div><strong>Job ID:</strong> <span class="mono" id="job_id">{{ job.job_id }}</span></div>
     <div><strong>Файл:</strong> <span id="filename">{{ job.filename }}</span></div>
+    {% if job.is_batch %}
+    <div><strong>Файлов:</strong> {{ job.files_count }}</div>
+    {% endif %}
     <div><strong>Статус:</strong> <span id="status" class="{% if job.status == 'done' %}ok{% elif job.status == 'error' %}err{% endif %}">{{ job.status }}</span></div>
     <div><strong>Stage:</strong> <span id="stage">{{ job.stage }}</span></div>
     <div><strong>Started:</strong> <span id="started_at">{{ job.started_at }}</span></div>
@@ -63,6 +66,15 @@
     <div><strong>Overlap:</strong> <span id="overlap_sec">{{ job.overlap_sec }}</span> сек</div>
     <div><strong>VAD:</strong> <span id="vad">{{ "on" if job.vad else "off" }}</span></div>
   </div>
+
+  {% if job.is_batch and job.input_files %}
+  <div class="card">
+    <div><strong>Batch files:</strong></div>
+    {% for item in job.input_files %}
+      <div class="mono">{{ item.index }}/{{ job.files_count }} {{ item.original_filename }} — {{ item.status }}</div>
+    {% endfor %}
+  </div>
+  {% endif %}
 
   <div class="card">
     <div><strong>Контекст:</strong> <span id="context_preset">{{ job.context_preset or "none" }}</span></div>

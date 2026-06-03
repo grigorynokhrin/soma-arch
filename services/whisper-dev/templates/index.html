@@ -109,8 +109,9 @@
 
   <div class="card">
     <form action="{{ root_path }}/submit" method="post" enctype="multipart/form-data">
-      <label for="audio_file">Аудиофайл</label>
-      <input id="audio_file" name="audio_file" type="file" accept=".m4a,.mp3,.wav,.flac,.ogg" required>
+      <label for="audio_file">Аудио/видеофайлы</label>
+      <input id="audio_file" name="audio_file" type="file" accept=".m4a,.mp3,.wav,.flac,.ogg,.mp4,.mkv,.mov,.avi,.webm" multiple required>
+      <div class="hint">Можно выбрать один или несколько файлов. Несколько файлов будут обработаны последовательно в одном job.</div>
 
       <div class="grid">
         <div>
