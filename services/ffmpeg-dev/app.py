@@ -4,7 +4,6 @@ from datetime import datetime
 from pathlib import Path
 import json
 import os
-import re
 import shutil
 import subprocess
 import threading
@@ -15,7 +14,16 @@ from fastapi import FastAPI, File, Form, Request, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse, PlainTextResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
-from command_builder import ALLOWED_METADATA_KEYS, build_convert_plan, build_remux_args, decode_process_bytes, subtitle_remux_action
+from command_builder import (
+    ALLOWED_METADATA_KEYS,
+    build_convert_plan,
+    build_remux_args,
+    decode_process_bytes,
+    ensure_clear_target,
+    safe_filename_component,
+    safe_output_filename,
+    subtitle_remux_action,
+)
 
 ROOT_PATH = os.getenv("FFMPEG_ROOT_PATH", "/ffmpeg-dev")
 TEMPLATE_ROOT_PATH = ROOT_PATH.rstrip("/")
@@ -56,22 +64,18 @@ def ensure_data_dirs() -> None:
 
 
 def clear_current_job() -> None:
+    ensure_clear_target(DATA_DIR, CURRENT_DIR)
     if CURRENT_DIR.exists():
         shutil.rmtree(CURRENT_DIR)
     ensure_data_dirs()
 
 
 def safe_name(filename: str) -> str:
-    name = Path(filename or "").name.strip()
-    name = re.sub(r"[^A-Za-z0-9._ -]+", "-", name)
-    name = re.sub(r"\s+", " ", name).strip(" .")
-    return name or "input"
+    return safe_filename_component(filename, "input")
 
 
 def safe_stem(value: str, default: str = "output") -> str:
-    stem = Path(value or default).stem
-    stem = re.sub(r"[^A-Za-z0-9._-]+", "-", stem).strip(".-_")
-    return stem or default
+    return Path(safe_name(value or default)).stem.strip() or default
 
 
 def write_json(path: Path, data: dict[str, Any]) -> None:
@@ -233,14 +237,17 @@ def selected_ints(values: list[str] | None) -> list[int]:
 
 
 def render_index(request: Request, error: str | None = None) -> HTMLResponse:
+    job = current_job()
+    show_probe = job.get("mode") == "remux" and job.get("status") == "probed"
     return templates.TemplateResponse(
         request,
         "index.html",
         {
             "title": "FFmpeg dev",
             "profiles": PROFILES,
-            "job": current_job(),
-            "probe": read_json(probe_path()),
+            "job": job,
+            "probe": read_json(probe_path()) if show_probe else {},
+            "show_probe": show_probe,
             "error": error,
             "metadata_keys": sorted(ALLOWED_METADATA_KEYS),
         },
@@ -256,6 +263,13 @@ async def healthz() -> str:
 async def index(request: Request):
     ensure_data_dirs()
     return render_index(request)
+
+
+@app.post("/job/clear")
+async def clear_job():
+    with ACTIVE_JOB_LOCK:
+        clear_current_job()
+    return RedirectResponse(url=f"{TEMPLATE_ROOT_PATH}/", status_code=303)
 
 
 @app.post("/remux/probe", response_class=HTMLResponse)
@@ -321,7 +335,7 @@ async def remux_run(
             return RedirectResponse(url=f"{TEMPLATE_ROOT_PATH}/job/result", status_code=303)
 
         input_path = Path(input_files[0]["path"])
-        output_path = OUTPUT_DIR / f"{safe_stem(output_name, 'remuxed')}.mp4"
+        output_path = OUTPUT_DIR / safe_output_filename(output_name, "remuxed", "mp4")
         default_audio = int(default_audio_stream) if default_audio_stream not in (None, "") else None
         metadata = {
             "title": title,
@@ -395,7 +409,7 @@ async def convert_run(profile_id: str = Form(...), video_files: list[UploadFile]
                 append_log(f"uploaded convert input {idx}/{len(uploads)}: {original}")
 
                 probe = normalize_probe(ffprobe_json(input_path))
-                output_path = OUTPUT_DIR / f"{safe_stem(original)}-{profile_id}.{profile['extension']}"
+                output_path = OUTPUT_DIR / safe_output_filename(f"{safe_stem(original)}-{profile_id}", f"output-{profile_id}", profile["extension"])
                 plan = build_convert_plan(input_path, output_path, profile, probe)
                 for warning in plan["warnings"]:
                     warnings.append(f"{original}: {warning}")

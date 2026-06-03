@@ -4,7 +4,17 @@ from pathlib import Path
 import json
 import re
 
-from command_builder import IMAGE_SUBTITLE_ERROR, build_convert_args, build_convert_plan, build_remux_args, decode_process_bytes, subtitle_remux_action
+from command_builder import (
+    IMAGE_SUBTITLE_ERROR,
+    build_convert_args,
+    build_convert_plan,
+    build_remux_args,
+    decode_process_bytes,
+    ensure_clear_target,
+    safe_filename_component,
+    safe_output_filename,
+    subtitle_remux_action,
+)
 
 HERE = Path(__file__).resolve().parent
 PROFILES_PATH = HERE / "profiles.json"
@@ -115,6 +125,17 @@ def assert_burn_plan(profile: dict, *, output_name: str, codec: str) -> dict:
     return plan
 
 
+def assert_safe_filename(value: str, extension: str = "mp4") -> str:
+    name = safe_output_filename(value, "output", extension)
+    assert "/" not in name
+    assert "\\" not in name
+    assert "\x00" not in name
+    assert ".." not in name
+    assert name.endswith(f".{extension}")
+    assert name.strip() == name
+    return name
+
+
 def main() -> None:
     profiles = load_profiles()
     assert set(profiles) == {
@@ -123,6 +144,28 @@ def main() -> None:
         "lacie-ss-16x9-vob-pal",
         "lacie-ss-16x9-avi",
     }
+
+    human_name = "2002 Queen of the Damned (RU-EN) Rymer & Abbott, Petroni.mp4"
+    assert safe_output_filename(human_name, "remuxed", "mp4") == human_name
+    assert_safe_filename("../evil.mp4")
+    assert_safe_filename("a/b.mp4")
+    assert_safe_filename("a\\b.mp4")
+    assert safe_output_filename("", "output", "mp4") == "output.mp4"
+    assert safe_output_filename("\x01\x02", "output", "mp4") == "output.mp4"
+    assert safe_output_filename("movie.mkv", "output", "mp4") == "movie.mp4"
+    assert safe_filename_component("  Пример, тест & ok (v1).mkv  ") == "Пример, тест & ok (v1).mkv"
+
+    ensure_clear_target(Path("/tmp/ffmpeg-data"), Path("/tmp/ffmpeg-data/current"))
+    try:
+        ensure_clear_target(Path("/tmp/ffmpeg-data"), Path("/tmp/elsewhere/current"))
+        raise AssertionError("clear target outside data dir should fail")
+    except RuntimeError:
+        pass
+
+    artifact = {"name": "ffmpeg-batch-subtitle-source-cowon-iaudio-d2-plus.avi"}
+    assert artifact["name"] == "ffmpeg-batch-subtitle-source-cowon-iaudio-d2-plus.avi"
+    status_model = {"warnings": ["Subtitle stream #3 codec subrip was burned into video."]}
+    assert status_model["warnings"][0].startswith("Subtitle stream")
 
     cowon = assert_convert_shape(
         profiles["cowon-iaudio-d2-plus"],

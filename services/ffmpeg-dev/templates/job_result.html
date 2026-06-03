@@ -7,6 +7,7 @@
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; max-width: 900px; margin: 32px auto; padding: 0 16px; line-height: 1.45; }
     .card { border: 1px solid #ddd; border-radius: 8px; padding: 18px; margin-bottom: 18px; }
+    .warning { color: #7a4a00; background: #fff6df; border: 1px solid #e1bd68; border-radius: 6px; padding: 10px; margin-top: 10px; }
     .error { color: #9b1c1c; white-space: pre-wrap; }
     .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; word-break: break-word; }
   </style>
@@ -24,13 +25,21 @@
     <div>Stage: <span class="mono">{{ job.stage }}</span></div>
     {% if job.profile_id %}<div>Profile: <span class="mono">{{ job.profile_id }}</span></div>{% endif %}
     {% if job.error %}<div class="error">{{ job.error }}</div>{% endif %}
+    {% if job.warnings %}
+    <div class="warning">
+      <strong>Warnings</strong>
+      {% for warning in job.warnings %}
+      <div>{{ warning }}</div>
+      {% endfor %}
+    </div>
+    {% endif %}
   </div>
 
   <div class="card">
     <h2>Downloads</h2>
     {% if job.artifacts %}
       {% for artifact in job.artifacts %}
-      <div><a href="{{ root_path }}/download/{{ artifact.name }}">{{ artifact.name }}</a> <span class="mono">{{ artifact.size_bytes }} bytes</span></div>
+      <div><a href="{{ root_path }}/download/{{ artifact.name }}">{{ artifact["name"] }}</a> <span class="mono">{{ artifact.size_bytes }} bytes</span></div>
       {% endfor %}
     {% else %}
       <div>No artifacts.</div>

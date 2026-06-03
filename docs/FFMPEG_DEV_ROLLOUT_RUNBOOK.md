@@ -209,6 +209,22 @@ If paths omit `/ffmpeg-dev`, verify the compose environment contains:
 
     FFMPEG_ROOT_PATH=/ffmpeg-dev
 
+### Filename Or Stale Probe UX Regression
+
+Human output names should preserve spaces, Unicode, parentheses, ampersands, commas, and safe dots. The extension should still be forced to `.mp4` for remux and to the profile extension for batch conversion.
+
+The index page should show an active remux form only for a current job with `status=probed`. Done, failed, or conversion jobs should show as summaries, not as stale probe/remux forms.
+
+The UI should include:
+
+- Clear current job action
+- submit waiting message for probe
+- submit waiting message for remux
+- submit waiting message for batch conversion
+- visible warnings on index/result/status views
+
+These submit indicators are not true progress bars.
+
 ### MP4 Remux Subtitle Failure
 
 Text subtitle codecs such as SubRip/SRT, ASS/SSA, and WebVTT should be converted to MP4 `mov_text` when needed. Video and audio must remain stream-copy.

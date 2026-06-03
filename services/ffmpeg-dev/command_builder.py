@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import re
 from typing import Any
 
 ALLOWED_METADATA_KEYS = {"title", "artist", "date", "genre", "language", "description", "publisher"}
@@ -17,6 +18,32 @@ def decode_process_bytes(data: bytes | str | None) -> str:
     if isinstance(data, str):
         return data
     return data.decode("utf-8", errors="replace")
+
+
+def safe_filename_component(filename: str, default: str = "input") -> str:
+    name = Path(filename or "").name.strip()
+    name = re.sub(r"[/\\\x00-\x1f\x7f]+", " ", name)
+    while ".." in name:
+        name = name.replace("..", ".")
+    name = re.sub(r"\s+", " ", name).strip()
+    return name or default
+
+
+def safe_output_filename(value: str, default: str, extension: str) -> str:
+    ext = "." + extension.lstrip(".")
+    name = safe_filename_component(value or default, default)
+    stem = Path(name).stem if Path(name).suffix else name
+    stem = stem.strip()
+    if not stem or stem in {".", ".."}:
+        stem = default
+    return f"{stem}{ext}"
+
+
+def ensure_clear_target(data_dir: Path, current_dir: Path) -> None:
+    data = data_dir.resolve()
+    current = current_dir.resolve()
+    if current == data or data not in current.parents:
+        raise RuntimeError("Refusing to clear a path outside the FFmpeg data directory")
 
 
 def rational_to_float(value: str | None) -> float | None:

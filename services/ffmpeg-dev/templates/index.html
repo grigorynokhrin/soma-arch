@@ -14,8 +14,11 @@
     table { width: 100%; border-collapse: collapse; margin: 8px 0 12px; }
     th, td { border-bottom: 1px solid #e5e5df; padding: 6px; text-align: left; vertical-align: top; }
     .muted { color: #666; }
+    .notice { color: #335c00; background: #f0f7e6; border: 1px solid #bfd99b; border-radius: 6px; padding: 10px; margin-top: 10px; }
+    .warning { color: #7a4a00; background: #fff6df; border: 1px solid #e1bd68; border-radius: 6px; padding: 10px; margin-top: 10px; }
     .error { color: #9b1c1c; white-space: pre-wrap; }
     .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; word-break: break-word; }
+    .hidden { display: none; }
   </style>
 </head>
 <body>
@@ -27,14 +30,17 @@
 
   <div class="section">
     <h2>MP4 remux</h2>
-    <form action="{{ root_path }}/remux/probe" method="post" enctype="multipart/form-data">
+    <form action="{{ root_path }}/remux/probe" method="post" enctype="multipart/form-data" data-submit-message="Uploading and probing file. Large multi-GB files may take several minutes. Do not close this page.">
       <label for="video_file">Video file</label>
       <input id="video_file" name="video_file" type="file" accept="video/*,.mkv,.mp4,.mov,.avi,.webm,.m2ts,.ts" required>
       <button type="submit">Probe</button>
+      <div class="notice hidden" data-submit-status></div>
     </form>
 
-    {% if probe and job.mode == "remux" %}
-    <div class="card">
+    <div id="stale_probe_notice" class="warning hidden">New file selected. Press Probe to analyze it before remux.</div>
+
+    {% if show_probe and probe %}
+    <div id="probe_result" class="card">
       <h3>Probe result</h3>
       <div class="muted">Chapters: {{ probe.chapters|length }}</div>
 
@@ -46,7 +52,7 @@
         {% endfor %}
       </table>
 
-      <form action="{{ root_path }}/remux/run" method="post">
+      <form action="{{ root_path }}/remux/run" method="post" data-submit-message="Running remux. Do not close this page.">
         <h4>Audio streams</h4>
         <table>
           <tr><th>Keep</th><th>Default</th><th>Index</th><th>Codec</th><th>Language</th><th>Title</th><th>Channels</th></tr>
@@ -113,6 +119,7 @@
         </div>
 
         <button type="submit">Remux to MP4</button>
+        <div class="notice hidden" data-submit-status></div>
       </form>
     </div>
     {% endif %}
@@ -120,7 +127,7 @@
 
   <div class="section">
     <h2>Batch conversion by profile</h2>
-    <form action="{{ root_path }}/convert/run" method="post" enctype="multipart/form-data">
+    <form action="{{ root_path }}/convert/run" method="post" enctype="multipart/form-data" data-submit-message="Uploading and converting files. Large files may take a long time. Do not close this page.">
       <label for="video_files">Video files</label>
       <input id="video_files" name="video_files" type="file" accept="video/*,.mkv,.mp4,.mov,.avi,.webm,.m2ts,.ts" multiple required>
 
@@ -131,6 +138,7 @@
         {% endfor %}
       </select>
       <button type="submit">Convert</button>
+      <div class="notice hidden" data-submit-status></div>
     </form>
   </div>
 
@@ -140,8 +148,44 @@
     <div>Status: <span class="mono">{{ job.status }}</span></div>
     <div>Stage: <span class="mono">{{ job.stage }}</span></div>
     {% if job.error %}<div class="error">{{ job.error }}</div>{% endif %}
+    {% if job.warnings %}
+    <div class="warning">
+      <strong>Warnings</strong>
+      {% for warning in job.warnings %}
+      <div>{{ warning }}</div>
+      {% endfor %}
+    </div>
+    {% endif %}
     <p><a href="{{ root_path }}/job/result">Open result</a> · <a href="{{ root_path }}/job/status.json">status.json</a></p>
+    <form action="{{ root_path }}/job/clear" method="post">
+      <button type="submit">Clear current job</button>
+    </form>
   </div>
   {% endif %}
+<script>
+  document.querySelectorAll('form[data-submit-message]').forEach((form) => {
+    form.addEventListener('submit', () => {
+      const button = form.querySelector('button[type="submit"]');
+      const status = form.querySelector('[data-submit-status]');
+      if (button) button.disabled = true;
+      if (status) {
+        status.textContent = form.dataset.submitMessage;
+        status.classList.remove('hidden');
+      }
+    });
+  });
+
+  const videoFile = document.getElementById('video_file');
+  const probeResult = document.getElementById('probe_result');
+  const staleNotice = document.getElementById('stale_probe_notice');
+  if (videoFile && probeResult && staleNotice) {
+    videoFile.addEventListener('change', () => {
+      if (videoFile.files.length) {
+        probeResult.style.opacity = '0.45';
+        staleNotice.classList.remove('hidden');
+      }
+    });
+  }
+</script>
 </body>
 </html>

@@ -7,6 +7,14 @@
 </head>
 <body>
   <h1>FFmpeg job status</h1>
+  {% if job.warnings %}
+  <section>
+    <h2>Warnings</h2>
+    {% for warning in job.warnings %}
+    <div>{{ warning }}</div>
+    {% endfor %}
+  </section>
+  {% endif %}
   <pre>{{ job | tojson(indent=2) }}</pre>
   <p><a href="{{ root_path }}/">Back</a></p>
 </body>

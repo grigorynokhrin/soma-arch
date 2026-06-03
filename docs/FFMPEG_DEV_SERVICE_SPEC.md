@@ -129,8 +129,42 @@ The web UI should support:
 - link to `status.json` for debugging
 - download completed output
 - expose cleanup behavior to the user
+- expose a clear-current-job action for the one-current-job model
+- hide stale remux probe forms unless the current job is exactly `probed`
+- show non-progress submit indicators for long uploads/conversions
+- render job warnings visibly on index, status, and result views
 
 The UI should not include a raw FFmpeg command text box.
+
+Submit indicators are simple waiting messages only. They are not percentage progress bars.
+
+## Filename Policy
+
+Human output filenames should be preserved where safe.
+
+Allowed filename content includes:
+
+- Unicode characters
+- spaces
+- parentheses
+- ampersand
+- comma
+- dots inside the base name
+
+Dangerous content must be rejected or neutralized:
+
+- slash
+- backslash
+- NUL/control characters
+- path traversal
+- empty names
+
+The final extension must be forced by operation:
+
+- `.mp4` for MP4 remux
+- profile extension for batch conversion
+
+Download link visible text and download filename should match the final artifact name exactly.
 
 ## API Endpoint Draft
 

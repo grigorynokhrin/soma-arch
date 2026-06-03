@@ -101,11 +101,46 @@ Current-job layout:
 
 Only the last job is kept. Starting a new remux probe or conversion run clears `/data/current`.
 
+Users can also clear the current job from the web UI:
+
+    POST /job/clear
+
+The clear action only removes the current FFmpeg dev job directory under `/data/current`.
+
 Exception:
 
     POST /remux/run
 
 uses the already probed current file and does not clear it again.
+
+## Filename Policy
+
+Output filenames preserve human-readable names where safe, including Unicode, spaces, parentheses, ampersand, comma, and dots inside the base name.
+
+The app neutralizes only dangerous/path characters:
+
+    slash
+    backslash
+    NUL/control characters
+    path traversal markers
+    empty names
+
+The final extension is forced to the expected output extension:
+
+    MP4 remux: .mp4
+    batch profiles: profile extension
+
+Download link text and `Content-Disposition` filename use the final artifact name.
+
+## UI State
+
+The index page shows the active remux form only when the current job is exactly `status=probed`.
+
+Completed, failed, or conversion jobs can still appear in the current-job summary, but stale probe tables are not shown as an active remux form. If a user selects a new file while a probe result is visible, the UI marks the old probe as stale and asks the user to probe the new file.
+
+Submit messages disable the clicked submit button and show a plain waiting message for probe, remux, and batch conversion. These are not true progress bars.
+
+Warnings such as subtitle burn-in/drop notices are rendered on the index current-job block and result/status pages.
 
 ## MP4 Remux Mode
 
