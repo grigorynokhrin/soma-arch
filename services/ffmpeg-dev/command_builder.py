@@ -6,6 +6,7 @@ from typing import Any
 
 ALLOWED_METADATA_KEYS = {"title", "artist", "date", "genre", "language", "description", "publisher"}
 BASIC_MP4_METADATA_KEYS = {"title", "artist", "date", "genre", "description", "publisher"}
+MP4_ENCODER_DELETE_TAGS = ["QuickTime:Encoder", "ItemList:Encoder", "UserData:Encoder", "Keys:Encoder"]
 MP4_PLAYER_METADATA_TAGS = {
     "title": ["ItemList:Title", "UserData:Title", "Keys:Title", "Keys:DisplayName"],
     "artist": ["ItemList:Artist", "UserData:Artist", "Keys:Artist", "UserData:Author", "Keys:Author"],
@@ -16,7 +17,15 @@ MP4_PLAYER_METADATA_TAGS = {
         "UserData:Description",
         "Keys:Description",
     ],
-    "publisher": ["UserData:Publisher", "Keys:Publisher"],
+    "publisher": [
+        "ItemList:Publisher",
+        "UserData:Publisher",
+        "QuickTime:Publisher",
+        "Keys:Publisher",
+        "ItemList:Producer",
+        "UserData:Producer",
+        "Keys:Producer",
+    ],
 }
 MP4_SUBTITLE_COPY_CODECS = {"mov_text"}
 MP4_SUBTITLE_TO_MOV_TEXT_CODECS = {"subrip", "srt", "ass", "ssa", "webvtt"}
@@ -80,11 +89,13 @@ def build_mp4_player_metadata_command(output_path: Path, metadata: dict[str, str
 
     cleaned = clean_metadata(metadata)
     args = ["exiftool", "-overwrite_original"]
+    for tag in MP4_ENCODER_DELETE_TAGS:
+        args.append(f"-{tag}=")
     warnings: list[str] = []
 
     for key, value in cleaned.items():
         if key == "language":
-            warnings.append("Global language is not written as a player metadata tag; audio/subtitle stream language tags are preserved instead.")
+            warnings.append("Global language is written only as best-effort descriptive metadata; player language fields usually come from audio/subtitle stream languages.")
             continue
         if key == "date":
             warnings.append("Date is kept as basic MP4 metadata only; no safe player-compatible ExifTool date alias is written.")

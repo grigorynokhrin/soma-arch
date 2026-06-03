@@ -174,6 +174,8 @@ Remux command policy:
 
 After FFmpeg succeeds, the service runs `exiftool -overwrite_original` on the final MP4 artifact under `/data/current/output` only. This writes best-effort player-compatible QuickTime/iTunes/UserData/Keys metadata aliases for the same user-entered fields. No arbitrary ExifTool flags come from the user.
 
+The same ExifTool pass removes FFmpeg/libavformat Encoder tags such as `Lavf...` from known QuickTime-family locations.
+
 Remux mode does not transcode video or audio. It preserves chapters/parts, wipes old global/container metadata, and writes only user-entered allowlisted global metadata:
 
     title
@@ -187,6 +189,8 @@ Remux mode does not transcode video or audio. It preserves chapters/parts, wipes
 One UI field may be duplicated into several recognized MP4 tag families so common players have a better chance to display it. Exact display remains player-controlled. Metadata post-processing can take extra time on multi-GB MP4 files because the MP4 container may need to be rewritten.
 
 The `description` field is written to Description and LongDescription-style tags. Comment-style aliases are intentionally skipped because some MP4 readers display UTF-8 comment aliases as mojibake.
+
+The `publisher` field is written best-effort to multiple Publisher and Producer-style QuickTime-compatible aliases. Player support varies. Player Language fields normally come from audio/subtitle stream language metadata; the global UI language field is warning-only unless a safe descriptive global language tag is added later.
 
 Selected audio/subtitle stream language and title/name tags are restored from probe data as much as MP4 supports. Text subtitles that MP4 cannot copy directly, including SubRip/SRT, ASS/SSA, and WebVTT, are converted to `mov_text`. Image subtitles such as DVD subtitles or PGS fail before FFmpeg because OCR is out of scope for v1. Per-stream metadata editing is not in v1: stream tags are not taken from the user-entered global metadata fields.
 

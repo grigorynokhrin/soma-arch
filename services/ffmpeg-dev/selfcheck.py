@@ -345,6 +345,10 @@ def main() -> None:
     assert exiftool[0] == "exiftool"
     assert "-overwrite_original" in exiftool
     assert exiftool[-1] == "/tmp/ffmpeg-data/current/output/Queen of the Damned.mp4"
+    assert "-QuickTime:Encoder=" in exiftool
+    assert "-ItemList:Encoder=" in exiftool
+    assert "-UserData:Encoder=" in exiftool
+    assert "-Keys:Encoder=" in exiftool
     assert "-ItemList:Title=Queen of the Damned" in exiftool
     assert "-UserData:Title=Queen of the Damned" in exiftool
     assert "-Keys:Title=Queen of the Damned" in exiftool
@@ -356,11 +360,17 @@ def main() -> None:
     assert "-UserData:Description=русский текст" in exiftool
     assert "-Keys:Description=русский текст" in exiftool
     assert not any("Comment=" in item for item in exiftool)
+    assert "-ItemList:Publisher=Publisher & Co." in exiftool
     assert "-UserData:Publisher=Publisher & Co." in exiftool
+    assert "-QuickTime:Publisher=Publisher & Co." in exiftool
     assert "-Keys:Publisher=Publisher & Co." in exiftool
+    assert "-ItemList:Producer=Publisher & Co." in exiftool
+    assert "-UserData:Producer=Publisher & Co." in exiftool
+    assert "-Keys:Producer=Publisher & Co." in exiftool
+    assert not any("Language=" in item for item in exiftool)
     assert not any("raw_args" in item or "-unsafe" in item for item in exiftool)
     assert metadata_plan["warnings"]
-    assert "Global language" in metadata_plan["warnings"][0]
+    assert "player language fields usually come from audio/subtitle stream languages" in metadata_plan["warnings"][0]
 
     print("selfcheck ok: profiles and command construction validated")
 

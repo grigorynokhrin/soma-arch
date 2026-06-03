@@ -243,6 +243,8 @@ Metadata display is player-controlled. Validate at least one common desktop play
 
 The description field should appear through Description/LongDescription-style tags. Comment-style aliases are intentionally skipped because some MP4 readers display UTF-8 comment aliases as mojibake.
 
+Final MP4 artifacts should not show FFmpeg/libavformat Encoder values such as `Lavf...`. Publisher is written to multiple best-effort Publisher/Producer-style aliases, but some players may still hide it. Player Language fields usually come from selected audio/subtitle stream language tags, not the global UI language field.
+
 ### Batch Profile Subtitle Handling
 
 Legacy AVI/VOB profile conversions should not fail just because the input has subtitles.
