@@ -5,6 +5,21 @@ import re
 from typing import Any
 
 ALLOWED_METADATA_KEYS = {"title", "artist", "date", "genre", "language", "description", "publisher"}
+BASIC_MP4_METADATA_KEYS = {"title", "artist", "date", "genre", "description", "publisher"}
+MP4_PLAYER_METADATA_TAGS = {
+    "title": ["ItemList:Title", "UserData:Title", "Keys:Title", "Keys:DisplayName"],
+    "artist": ["ItemList:Artist", "UserData:Artist", "Keys:Artist", "UserData:Author", "Keys:Author"],
+    "genre": ["ItemList:Genre", "UserData:Genre", "Keys:Genre"],
+    "description": [
+        "ItemList:Description",
+        "ItemList:LongDescription",
+        "UserData:Description",
+        "Keys:Description",
+        "ItemList:Comment",
+        "UserData:Comment",
+    ],
+    "publisher": ["UserData:Publisher", "Keys:Publisher"],
+}
 MP4_SUBTITLE_COPY_CODECS = {"mov_text"}
 MP4_SUBTITLE_TO_MOV_TEXT_CODECS = {"subrip", "srt", "ass", "ssa", "webvtt"}
 TEXT_SUBTITLE_CODECS = MP4_SUBTITLE_TO_MOV_TEXT_CODECS | MP4_SUBTITLE_COPY_CODECS
@@ -44,6 +59,47 @@ def ensure_clear_target(data_dir: Path, current_dir: Path) -> None:
     current = current_dir.resolve()
     if current == data or data not in current.parents:
         raise RuntimeError("Refusing to clear a path outside the FFmpeg data directory")
+
+
+def ensure_output_artifact_path(output_root: Path, artifact_path: Path) -> None:
+    root = output_root.resolve()
+    artifact = artifact_path.resolve()
+    if root not in artifact.parents or artifact.suffix.lower() != ".mp4":
+        raise RuntimeError("Refusing to post-process a path outside the FFmpeg output directory")
+
+
+def clean_metadata(metadata: dict[str, str]) -> dict[str, str]:
+    cleaned = {}
+    for key, value in metadata.items():
+        if key in ALLOWED_METADATA_KEYS and value and value.strip():
+            cleaned[key] = value.strip()
+    return cleaned
+
+
+def build_mp4_player_metadata_command(output_path: Path, metadata: dict[str, str], output_root: Path | None = None) -> dict[str, Any]:
+    if output_root is not None:
+        ensure_output_artifact_path(output_root, output_path)
+
+    cleaned = clean_metadata(metadata)
+    args = ["exiftool", "-overwrite_original"]
+    warnings: list[str] = []
+
+    for key, value in cleaned.items():
+        if key == "language":
+            warnings.append("Global language is not written as a player metadata tag; audio/subtitle stream language tags are preserved instead.")
+            continue
+        if key == "date":
+            warnings.append("Date is kept as basic MP4 metadata only; no safe player-compatible ExifTool date alias is written.")
+            continue
+        tags = MP4_PLAYER_METADATA_TAGS.get(key, [])
+        if not tags:
+            warnings.append(f"Metadata field {key} has no safe player-compatible ExifTool aliases in v1.")
+            continue
+        for tag in tags:
+            args.append(f"-{tag}={value}")
+
+    args.append(str(output_path))
+    return {"args": args, "warnings": warnings}
 
 
 def rational_to_float(value: str | None) -> float | None:
@@ -181,11 +237,9 @@ def build_remux_args(
         args += ["-map", f"0:{idx}"]
 
     args += ["-c", "copy", "-map_chapters", "0", "-map_metadata", "-1"]
-    for key, value in metadata.items():
-        if key in ALLOWED_METADATA_KEYS and value.strip():
-            args += ["-metadata", f"{key}={value.strip()}"]
-
-    args += ["-movflags", "use_metadata_tags"]
+    for key, value in clean_metadata(metadata).items():
+        if key in BASIC_MP4_METADATA_KEYS:
+            args += ["-metadata", f"{key}={value}"]
 
     for out_audio_idx, source_idx in enumerate(audio_streams):
         add_selected_stream_metadata(args, f"a:{out_audio_idx}", stream_by_index(probe, "audio_streams", source_idx))

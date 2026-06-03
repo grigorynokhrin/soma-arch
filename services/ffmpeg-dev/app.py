@@ -17,6 +17,7 @@ from fastapi.templating import Jinja2Templates
 from command_builder import (
     ALLOWED_METADATA_KEYS,
     build_convert_plan,
+    build_mp4_player_metadata_command,
     build_remux_args,
     decode_process_bytes,
     ensure_clear_target,
@@ -293,6 +294,7 @@ async def remux_probe(request: Request, video_file: UploadFile = File(...)):
             "error": None,
             "input_files": [{"name": original, "path": str(input_path)}],
             "artifacts": [],
+            "warnings": [],
         }
         save_job(job)
 
@@ -361,8 +363,20 @@ async def remux_run(
                 metadata=metadata,
             )
             run_checked(args)
+            metadata_plan = build_mp4_player_metadata_command(output_path, metadata, OUTPUT_DIR)
+            warnings = list(job.get("warnings") or [])
+            for warning in metadata_plan["warnings"]:
+                warnings.append(warning)
+                append_log("warning: " + warning)
+            if len(metadata_plan["args"]) > 3:
+                job.update({"stage": "writing_metadata", "warnings": warnings})
+                save_job(job)
+                try:
+                    run_checked(metadata_plan["args"])
+                except Exception as e:
+                    raise RuntimeError(f"MP4 metadata post-processing failed: {e}") from e
             artifact = {"name": output_path.name, "path": str(output_path), "kind": "mp4", "size_bytes": output_path.stat().st_size}
-            job.update({"status": "done", "stage": "done", "finished_at": now_iso(), "artifacts": [artifact], "error": None})
+            job.update({"status": "done", "stage": "done", "finished_at": now_iso(), "artifacts": [artifact], "warnings": warnings, "error": None})
         except Exception as e:
             job.update({"status": "failed", "stage": "failed", "finished_at": now_iso(), "error": str(e)})
         save_job(job)

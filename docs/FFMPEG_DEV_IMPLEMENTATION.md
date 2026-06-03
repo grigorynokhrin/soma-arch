@@ -157,6 +157,7 @@ Flow:
 7. Set output filename.
 8. Set allowlisted metadata fields.
 9. Run FFmpeg with stream copy.
+10. Post-process player-compatible MP4 metadata with ExifTool when metadata fields are provided.
 
 Remux command policy:
 
@@ -166,11 +167,12 @@ Remux command policy:
     -c copy
     -map_chapters 0
     -map_metadata -1 for old global/container metadata
-    allowlisted user-entered -metadata fields only
-    -movflags use_metadata_tags
+    allowlisted user-entered basic -metadata fields only
     convert MP4-incompatible text subtitles to mov_text
     reject image subtitles before FFmpeg
     exactly one selected default audio stream when requested
+
+After FFmpeg succeeds, the service runs `exiftool -overwrite_original` on the final MP4 artifact under `/data/current/output` only. This writes best-effort player-compatible QuickTime/iTunes/UserData/Keys metadata aliases for the same user-entered fields. No arbitrary ExifTool flags come from the user.
 
 Remux mode does not transcode video or audio. It preserves chapters/parts, wipes old global/container metadata, and writes only user-entered allowlisted global metadata:
 
@@ -182,7 +184,9 @@ Remux mode does not transcode video or audio. It preserves chapters/parts, wipes
     description
     publisher
 
-Selected audio/subtitle stream language and title/name tags are restored from probe data as much as MP4 supports. Text subtitles that MP4 cannot copy directly, including SubRip/SRT, ASS/SSA, and WebVTT, are converted to `mov_text`. Image subtitles such as DVD subtitles or PGS fail before FFmpeg because OCR is out of scope for v1. Per-stream metadata editing is not in v1: stream tags are not taken from the user-entered global metadata fields. MP4/player visibility of some global metadata fields is container/player-dependent.
+One UI field may be duplicated into several recognized MP4 tag families so common players have a better chance to display it. Exact display remains player-controlled. Metadata post-processing can take extra time on multi-GB MP4 files because the MP4 container may need to be rewritten.
+
+Selected audio/subtitle stream language and title/name tags are restored from probe data as much as MP4 supports. Text subtitles that MP4 cannot copy directly, including SubRip/SRT, ASS/SSA, and WebVTT, are converted to `mov_text`. Image subtitles such as DVD subtitles or PGS fail before FFmpeg because OCR is out of scope for v1. Per-stream metadata editing is not in v1: stream tags are not taken from the user-entered global metadata fields.
 
 If FFmpeg cannot mux a selected stream into MP4, the job fails and shows a concise stderr excerpt.
 

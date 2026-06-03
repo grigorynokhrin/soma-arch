@@ -13,7 +13,7 @@ ENV FFMPEG_ROOT_PATH=/ffmpeg-dev
 ENV FFMPEG_DATA_DIR=/data
 
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends ffmpeg ca-certificates \
+  && apt-get install -y --no-install-recommends ffmpeg ca-certificates libimage-exiftool-perl \
   && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .

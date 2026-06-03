@@ -348,7 +348,8 @@ MP4 remux metadata policy:
 - do not copy old global/container metadata from source media
 - do not merge old global/container metadata with new metadata
 - write only manually entered allowlisted global metadata fields
-- use `-movflags use_metadata_tags` for MP4 remux output
+- write basic FFmpeg MP4 metadata during mux where safe
+- post-process the final MP4 with ExifTool for best-effort QuickTime/iTunes/UserData/Keys player-compatible tags
 - restore selected audio/subtitle stream language and title/name tags from probe data as much as MP4 supports
 - do not rewrite stream metadata from user global fields
 - keep default audio disposition controlled by the UI
@@ -364,6 +365,8 @@ The fixed global metadata allowlist is:
 - `publisher`
 
 Chapters are not considered user metadata for this policy and must remain preserved. MP4/player visibility of some global metadata fields is container/player-dependent. Per-stream metadata editing is not in v1.
+
+The ExifTool post-processing step uses `-overwrite_original`, list-form subprocess arguments, and only known tag aliases chosen by the application. It runs only against the final MP4 artifact under `/data/current/output`. One UI field can be duplicated into several recognized MP4 tag families because QuickTime, Finder, VLC, IINA, and other players do not all display the same atoms. Exact display remains player-controlled. Large MP4 files may take extra time because metadata post-processing can rewrite the container.
 
 MP4 remux subtitle policy:
 

@@ -235,6 +235,12 @@ Image subtitles such as PGS or DVD subtitles are not supported in MP4 remux v1 b
 
 If a remux failure shows a Python `UnicodeDecodeError`, the process-output decoding path has regressed. FFmpeg and FFprobe logs should be decoded with replacement so the real FFmpeg error is visible.
 
+### MP4 Remux Player Metadata
+
+When remux metadata fields are filled, FFmpeg writes basic MP4 metadata during mux and ExifTool post-processes the final MP4 with QuickTime/iTunes/UserData/Keys-compatible tags. Check that the job can enter `writing_metadata` and complete without leaving `*_original` backup artifacts.
+
+Metadata display is player-controlled. Validate at least one common desktop player or Finder/QuickTime path if this behavior is the focus of the rollout. Large MP4 files may spend extra time in metadata post-processing because the container can be rewritten.
+
 ### Batch Profile Subtitle Handling
 
 Legacy AVI/VOB profile conversions should not fail just because the input has subtitles.

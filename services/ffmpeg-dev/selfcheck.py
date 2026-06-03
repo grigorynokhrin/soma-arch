@@ -8,8 +8,10 @@ from command_builder import (
     IMAGE_SUBTITLE_ERROR,
     build_convert_args,
     build_convert_plan,
+    build_mp4_player_metadata_command,
     build_remux_args,
     decode_process_bytes,
+    ensure_output_artifact_path,
     ensure_clear_target,
     safe_filename_component,
     safe_output_filename,
@@ -156,9 +158,15 @@ def main() -> None:
     assert safe_filename_component("  Пример, тест & ok (v1).mkv  ") == "Пример, тест & ok (v1).mkv"
 
     ensure_clear_target(Path("/tmp/ffmpeg-data"), Path("/tmp/ffmpeg-data/current"))
+    ensure_output_artifact_path(Path("/tmp/ffmpeg-data/current/output"), Path("/tmp/ffmpeg-data/current/output/movie.mp4"))
     try:
         ensure_clear_target(Path("/tmp/ffmpeg-data"), Path("/tmp/elsewhere/current"))
         raise AssertionError("clear target outside data dir should fail")
+    except RuntimeError:
+        pass
+    try:
+        ensure_output_artifact_path(Path("/tmp/ffmpeg-data/current/output"), Path("/tmp/ffmpeg-data/current/input/movie.mp4"))
+        raise AssertionError("metadata post-process path outside output dir should fail")
     except RuntimeError:
         pass
 
@@ -263,10 +271,10 @@ def main() -> None:
         subtitle_streams=[3],
         metadata={"title": "Kept", "raw_args": "-filter_complex unsafe", "genre": "Live"},
     )
-    assert_contains(remux, "-c", "copy", "-map_chapters", "0", "-map_metadata", "-1", "-movflags", "use_metadata_tags")
+    assert_contains(remux, "-c", "copy", "-map_chapters", "0", "-map_metadata", "-1")
     assert_pair(remux, "-map_chapters", "0")
     assert_pair(remux, "-map_metadata", "-1")
-    assert_pair(remux, "-movflags", "use_metadata_tags")
+    assert "-movflags" not in remux
     assert ("-map_metadata", "0") not in list(zip(remux, remux[1:]))
     assert "-c:v" not in remux
     assert "-c:a" not in remux
@@ -319,6 +327,38 @@ def main() -> None:
         assert str(exc) == IMAGE_SUBTITLE_ERROR
 
     assert decode_process_bytes(b"ok\xd1bad") == "ok\ufffdbad"
+
+    metadata_plan = build_mp4_player_metadata_command(
+        Path("/tmp/ffmpeg-data/current/output/Queen of the Damned.mp4"),
+        {
+            "title": "Queen of the Damned",
+            "artist": "Rymer & Abbott, Petroni",
+            "genre": "RU-EN",
+            "description": "русский текст",
+            "publisher": "Publisher & Co.",
+            "language": "rus",
+            "raw_args": "-unsafe",
+        },
+        Path("/tmp/ffmpeg-data/current/output"),
+    )
+    exiftool = metadata_plan["args"]
+    assert exiftool[0] == "exiftool"
+    assert "-overwrite_original" in exiftool
+    assert exiftool[-1] == "/tmp/ffmpeg-data/current/output/Queen of the Damned.mp4"
+    assert "-ItemList:Title=Queen of the Damned" in exiftool
+    assert "-UserData:Title=Queen of the Damned" in exiftool
+    assert "-Keys:Title=Queen of the Damned" in exiftool
+    assert "-ItemList:Artist=Rymer & Abbott, Petroni" in exiftool
+    assert "-UserData:Author=Rymer & Abbott, Petroni" in exiftool
+    assert "-ItemList:Genre=RU-EN" in exiftool
+    assert "-ItemList:Description=русский текст" in exiftool
+    assert "-ItemList:LongDescription=русский текст" in exiftool
+    assert "-UserData:Comment=русский текст" in exiftool
+    assert "-UserData:Publisher=Publisher & Co." in exiftool
+    assert "-Keys:Publisher=Publisher & Co." in exiftool
+    assert not any("raw_args" in item or "-unsafe" in item for item in exiftool)
+    assert metadata_plan["warnings"]
+    assert "Global language" in metadata_plan["warnings"][0]
 
     print("selfcheck ok: profiles and command construction validated")
 
