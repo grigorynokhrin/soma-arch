@@ -241,6 +241,8 @@ When remux metadata fields are filled, FFmpeg writes basic MP4 metadata during m
 
 Metadata display is player-controlled. Validate at least one common desktop player or Finder/QuickTime path if this behavior is the focus of the rollout. Large MP4 files may spend extra time in metadata post-processing because the container can be rewritten.
 
+The description field should appear through Description/LongDescription-style tags. Comment-style aliases are intentionally skipped because some MP4 readers display UTF-8 comment aliases as mojibake.
+
 ### Batch Profile Subtitle Handling
 
 Legacy AVI/VOB profile conversions should not fail just because the input has subtitles.

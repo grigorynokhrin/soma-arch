@@ -353,7 +353,9 @@ def main() -> None:
     assert "-ItemList:Genre=RU-EN" in exiftool
     assert "-ItemList:Description=русский текст" in exiftool
     assert "-ItemList:LongDescription=русский текст" in exiftool
-    assert "-UserData:Comment=русский текст" in exiftool
+    assert "-UserData:Description=русский текст" in exiftool
+    assert "-Keys:Description=русский текст" in exiftool
+    assert not any("Comment=" in item for item in exiftool)
     assert "-UserData:Publisher=Publisher & Co." in exiftool
     assert "-Keys:Publisher=Publisher & Co." in exiftool
     assert not any("raw_args" in item or "-unsafe" in item for item in exiftool)

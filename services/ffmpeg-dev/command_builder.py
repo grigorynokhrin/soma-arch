@@ -15,8 +15,6 @@ MP4_PLAYER_METADATA_TAGS = {
         "ItemList:LongDescription",
         "UserData:Description",
         "Keys:Description",
-        "ItemList:Comment",
-        "UserData:Comment",
     ],
     "publisher": ["UserData:Publisher", "Keys:Publisher"],
 }

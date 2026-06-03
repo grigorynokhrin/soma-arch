@@ -368,6 +368,8 @@ Chapters are not considered user metadata for this policy and must remain preser
 
 The ExifTool post-processing step uses `-overwrite_original`, list-form subprocess arguments, and only known tag aliases chosen by the application. It runs only against the final MP4 artifact under `/data/current/output`. One UI field can be duplicated into several recognized MP4 tag families because QuickTime, Finder, VLC, IINA, and other players do not all display the same atoms. Exact display remains player-controlled. Large MP4 files may take extra time because metadata post-processing can rewrite the container.
 
+The `description` field is written to Description and LongDescription-style tags. Comment-style aliases are intentionally skipped because some MP4 readers display UTF-8 comment aliases as mojibake.
+
 MP4 remux subtitle policy:
 
 - video is stream-copied
