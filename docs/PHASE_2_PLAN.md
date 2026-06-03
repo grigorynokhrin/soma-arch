@@ -122,6 +122,8 @@ Acceptance criteria:
 - service binds only to localhost in dev
 - no Caddy route is added in the initial skeleton
 - no legacy paths are modified
+- UI has separate MP4 remux and batch profile-conversion blocks
+- profile definitions live in structured JSON, not shell snippets
 
 ### Milestone 4: ffprobe inspection
 

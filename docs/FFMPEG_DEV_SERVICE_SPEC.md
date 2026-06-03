@@ -100,6 +100,9 @@ Manual settings must be validated and converted into an FFmpeg args array by ser
 
 The web UI should support:
 
+- one page with two independent workflow blocks and two independent submit buttons
+- an upper MP4 remux block for exactly one file
+- a lower batch conversion block for one or more files and one predefined profile
 - upload file and/or select file from an approved server-side input folder
 - probe streams before conversion
 - display a stream table
@@ -511,6 +514,10 @@ Suggested route:
     /ffmpeg-dev
 
 The initial skeleton should not edit Caddy. A Caddy dev route for `/ffmpeg-dev` can be added later only with explicit approval and rollback notes.
+
+Initial skeleton document:
+
+    docs/FFMPEG_DEV_IMPLEMENTATION.md
 
 ## Open Questions
 

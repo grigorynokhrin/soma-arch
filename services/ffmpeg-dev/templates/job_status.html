@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>{{ title }}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+  <h1>FFmpeg job status</h1>
+  <pre>{{ job | tojson(indent=2) }}</pre>
+  <p><a href="{{ root_path }}/">Back</a></p>
+</body>
+</html>

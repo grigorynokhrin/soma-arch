@@ -1,0 +1,21 @@
+name: soma-ffmpeg-dev
+
+services:
+  ffmpeg-dev:
+    container_name: soma-ffmpeg-dev
+    image: soma-ffmpeg-dev:local
+    build:
+      context: ../services/ffmpeg-dev
+      dockerfile: Dockerfile
+      args:
+        APP_UID: "1000"
+        APP_GID: "990"
+    environment:
+      TZ: America/Chicago
+      FFMPEG_ROOT_PATH: /ffmpeg-dev
+      FFMPEG_DATA_DIR: /data
+    volumes:
+      - /srv/soma/data/ffmpeg-dev:/data
+    ports:
+      - "127.0.0.1:18082:8000"
+    restart: unless-stopped

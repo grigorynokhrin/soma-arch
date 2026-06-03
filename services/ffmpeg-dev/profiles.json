@@ -1,0 +1,117 @@
+[
+  {
+    "id": "cowon-iaudio-d2-plus",
+    "label": "Cowon iAudio D2+",
+    "container": "avi",
+    "extension": "avi",
+    "video": {
+      "codec": "mpeg4",
+      "fourcc": "XVID",
+      "width": 320,
+      "height": 240,
+      "display_aspect": "4:3",
+      "pixel_aspect": "1:1",
+      "crop_policy": "crop_sides_to_aspect",
+      "fps_mode": "cfr_source_max",
+      "max_fps": 30,
+      "avg_bitrate_kbps": 900,
+      "max_bitrate_kbps": 1300
+    },
+    "audio": {
+      "codec": "mp3",
+      "channels": 2,
+      "bitrate_kbps": 128
+    }
+  },
+  {
+    "id": "lacie-ss-4x3-vob-pal",
+    "label": "LaCie SS 4:3",
+    "container": "vob",
+    "extension": "vob",
+    "video": {
+      "codec": "mpeg2video",
+      "width": 720,
+      "height": 576,
+      "display_aspect": "4:3",
+      "pixel_aspect": "pal_dvd",
+      "crop_policy": "crop_sides_to_aspect",
+      "fps_mode": "cfr_fixed",
+      "fps": 25,
+      "avg_bitrate_kbps": 6000,
+      "max_bitrate_kbps": 9000
+    },
+    "audio": {
+      "codec": "ac3",
+      "channels": 2,
+      "bitrate_kbps": 192
+    },
+    "audio_alternatives": [
+      {
+        "codec": "mp3",
+        "channels": 2,
+        "bitrate_kbps": 192
+      }
+    ]
+  },
+  {
+    "id": "lacie-ss-16x9-vob-pal",
+    "label": "LaCie SS 16:9 PAL",
+    "container": "vob",
+    "extension": "vob",
+    "video": {
+      "codec": "mpeg2video",
+      "width": 720,
+      "height": 576,
+      "display_aspect": "16:9",
+      "pixel_aspect": "pal_dvd_anamorphic",
+      "crop_policy": "crop_sides_only_if_source_wider_else_pad",
+      "fps_mode": "cfr_fixed",
+      "fps": 25,
+      "avg_bitrate_kbps": 6000,
+      "max_bitrate_kbps": 9000
+    },
+    "audio": {
+      "codec": "ac3",
+      "channels": 2,
+      "bitrate_kbps": 448
+    },
+    "audio_alternatives": [
+      {
+        "codec": "mp3",
+        "channels": 2,
+        "bitrate_kbps": 192
+      }
+    ]
+  },
+  {
+    "id": "lacie-ss-16x9-avi",
+    "label": "LaCie SS 16:9",
+    "container": "avi",
+    "extension": "avi",
+    "video": {
+      "codec": "mpeg4",
+      "fourcc": "XVID",
+      "width": 1024,
+      "height": 576,
+      "display_aspect": "16:9",
+      "pixel_aspect": "1:1",
+      "crop_policy": "crop_sides_only_if_source_wider_else_pad",
+      "fps_mode": "cfr_fixed",
+      "fps": 25,
+      "avg_bitrate_kbps": 2000,
+      "max_bitrate_kbps": 3000
+    },
+    "audio": {
+      "codec": "ac3",
+      "channels": 2,
+      "bitrate_kbps": 448
+    },
+    "audio_alternatives": [
+      {
+        "codec": "mp3",
+        "channels": 2,
+        "bitrate_kbps": 192
+      }
+    ]
+  }
+]
