@@ -493,6 +493,25 @@ The following items are intentionally left for later phases:
     Caddy recreation test with persistent network override
     production promotion of /whisper-dev
 
+## Post-Phase-1 production release note
+
+As of release:
+
+    whisper-prod-2026.06.03
+
+legacy/prod Whisper is promoted to the dev-derived release model.
+
+The production route remains:
+
+    /myservices/whisper
+
+Caddy was not changed for that release.
+
+Release details:
+
+    docs/RELEASES.md
+    docs/WHISPER_RELEASE_MODEL.md
+
 ## Recommended next phase
 
 Phase 2 should focus on product/runtime expansion, not emergency restructuring.
