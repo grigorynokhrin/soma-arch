@@ -98,6 +98,20 @@ The response should be HTML for the FFmpeg dev page.
 
 No Caddy route is expected during this initial rollout.
 
+## CPU-Only V1 Policy
+
+`soma-ffmpeg-dev` v1 is intentionally CPU-only.
+
+Do not add GPU access to the compose file for this rollout. FFmpeg does not automatically use NVIDIA GPU, CUDA, or NVENC just because the host has an RTX 3060. NVIDIA video acceleration uses explicit NVENC/NVDEC hardware paths.
+
+Expected v1 workload:
+
+- MP4 remux uses stream copy and is mostly I/O/container-bound.
+- profile conversion targets MPEG-2/VOB and MPEG-4 Part 2/Xvid-style AVI.
+- these legacy/device profiles are CPU encode targets in v1.
+
+Future GPU work should add explicit hardware-accelerated profiles. Prefer H.264/H.265 via NVENC. Use AV1 NVENC only if the actual GPU supports AV1 encode. Do not describe VP8/VP9 as NVENC encode targets; they may be relevant for NVDEC decode.
+
 ## Stop And Cleanup
 
 Stop only this compose project:

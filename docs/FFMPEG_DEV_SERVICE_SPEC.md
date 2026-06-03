@@ -21,7 +21,17 @@ The service is designed for the real `soma` server:
 - NVIDIA RTX 3060 12GB VRAM
 - 480GB SSD
 
-The first version should be CPU-first. NVENC/GPU acceleration is a later option only after compatibility with the installed driver, CUDA stack, container image, and FFmpeg build is verified.
+The first version is CPU-only. Do not add GPU access to Compose in v1.
+
+FFmpeg does not automatically use NVIDIA GPU, CUDA, or NVENC just because the host has an RTX 3060. NVIDIA acceleration requires explicit NVENC/NVDEC hardware paths; it is not automatic CUDA-core execution.
+
+V1 workload expectations:
+
+- MP4 remux uses stream copy and is mostly I/O/container-bound.
+- device profiles target MPEG-2/VOB and MPEG-4 Part 2/Xvid-style AVI.
+- those legacy/device profile encodes are CPU encode targets in v1.
+
+Future hardware-accelerated profiles should be explicit additions. Primary encode targets are H.264/H.265 via NVENC. AV1 NVENC is valid only if the actual GPU supports AV1 encode. VP8/VP9 should not be described as NVENC encode targets; they may be relevant for hardware decode via NVDEC.
 
 ## Non-Goals
 
@@ -37,6 +47,7 @@ The first version must not:
 - become a permanent media archive
 - store large input/output media forever
 - use GPU acceleration or NVENC by default
+- add GPU access to Compose in v1
 
 ## User Stories
 

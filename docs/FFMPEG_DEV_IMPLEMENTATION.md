@@ -23,6 +23,20 @@ It is intentionally separate from:
 
 Do not combine FFmpeg with Whisper or Home.
 
+## Resource Policy
+
+`soma-ffmpeg-dev` v1 is intentionally CPU-only. Do not add GPU access to `compose/ffmpeg-dev.compose.yml` in v1.
+
+FFmpeg does not automatically use NVIDIA GPU, CUDA, or NVENC because the host has an RTX 3060. NVIDIA video acceleration requires explicit NVENC/NVDEC hardware paths and compatible codecs; it is not automatic CUDA-core execution.
+
+Current workflow expectations:
+
+- MP4 remux uses stream copy and is mostly I/O/container-bound.
+- device profiles target MPEG-2/VOB and MPEG-4 Part 2/Xvid-style AVI.
+- those legacy/device encode targets are CPU encode targets in v1.
+
+Future hardware-accelerated profiles should be explicit profile additions. Primary candidates are H.264/H.265 via NVENC. AV1 NVENC is only valid if the actual GPU supports AV1 encode. VP8/VP9 should not be documented as NVENC encode targets; they may be relevant for hardware decode via NVDEC.
+
 ## Routes
 
 The app uses:
@@ -129,6 +143,8 @@ Conversion maps:
     metadata with -map_metadata 0
 
 FFmpeg commands are generated from structured profile fields. There is no raw command input and no `shell=True`.
+
+These v1 profiles are CPU encode profiles. They do not request NVENC, NVDEC, CUDA, or GPU device access.
 
 ## Predefined Profiles
 
