@@ -246,6 +246,7 @@ Recommended stable statuses:
 - `queued`
 - `running`
 - `done`
+- `done_with_warnings`
 - `failed`
 - `canceled`
 
@@ -367,9 +368,15 @@ Chapters are not considered user metadata for this policy and must remain preser
 
 The ExifTool post-processing step uses `-overwrite_original`, list-form subprocess arguments, and only known tag aliases chosen by the application. It runs only against the final MP4 artifact under `/data/current/output`. One UI field can be duplicated into several recognized MP4 tag families because QuickTime, Finder, VLC, IINA, and other players do not all display the same atoms. Exact display remains player-controlled. Large MP4 files may take extra time because metadata post-processing can rewrite the container.
 
+ExifTool must be called with `-api LargeFileSupport=1` so multi-GB MP4 atoms can be processed. The observed failure mode without this flag is `End of processing at large atom (LargeFileSupport not enabled)`.
+
 The `description` field is written to Description and LongDescription-style tags. Comment-style aliases are intentionally skipped because some MP4 readers display UTF-8 comment aliases as mojibake.
 
+Year-only `date` values such as `2002` are normalized to `2002:01:01 00:00:00` for `ItemList:ContentCreateDate`. Bare years are not valid ExifTool date/time values for that tag.
+
 Publisher and global language are intentionally not supported in v1 because common MP4 players do not reliably persist or display them without custom tags. Audio/subtitle stream language metadata is preserved separately from global metadata.
+
+Metadata post-processing must not destroy or hide a successful remux. If FFmpeg created the output MP4 and ExifTool fails, the artifact remains in `artifacts`, the job reports `done_with_warnings`, and the metadata failure is shown in `warnings`.
 
 MP4 remux subtitle policy:
 

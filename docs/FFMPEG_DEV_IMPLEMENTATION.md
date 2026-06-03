@@ -176,6 +176,8 @@ After FFmpeg succeeds, the service runs metadata post-processing on the final MP
 
 The metadata layer uses `exiftool -overwrite_original` to write best-effort player-compatible QuickTime/iTunes/UserData/Keys metadata aliases for the same user-entered fields. This preserves broad Apple/Finder/IINA/VLC-visible behavior where players support those fields.
 
+ExifTool is always called with `-api LargeFileSupport=1`. Without that option, ExifTool can stop at large MP4 atoms with `End of processing at large atom (LargeFileSupport not enabled)` on multi-GB files.
+
 The same ExifTool pass removes FFmpeg/libavformat Encoder tags such as `Lavf...` from known QuickTime-family locations.
 
 Remux mode does not transcode video or audio. It preserves chapters/parts, wipes old global/container metadata, and writes only user-entered allowlisted global metadata:
@@ -190,9 +192,13 @@ One UI field may be duplicated into several recognized MP4 tag families so commo
 
 The `description` field is written to Description and LongDescription-style tags. Comment-style aliases are intentionally skipped because some MP4 readers display UTF-8 comment aliases as mojibake.
 
+Year-only `date` values such as `2002` are normalized to `2002:01:01 00:00:00` before writing `ItemList:ContentCreateDate`, because ExifTool rejects a bare year for that QuickTime date tag.
+
 Publisher and global language are intentionally not supported in v1 because common MP4 players do not reliably persist or display them without custom tags. Audio/subtitle stream language metadata is preserved separately from global metadata.
 
 Selected audio/subtitle stream language and title/name tags are restored from probe data as much as MP4 supports. Text subtitles that MP4 cannot copy directly, including SubRip/SRT, ASS/SSA, and WebVTT, are converted to `mov_text`. Image subtitles such as DVD subtitles or PGS fail before FFmpeg because OCR is out of scope for v1. Per-stream metadata editing is not in v1: stream tags are not taken from the user-entered global metadata fields.
+
+If FFmpeg remux succeeds and metadata post-processing fails, the MP4 artifact is preserved and remains downloadable. The job status becomes `done_with_warnings`, and the metadata error is recorded in `warnings` instead of failing the job.
 
 If FFmpeg cannot mux a selected stream into MP4, the job fails and shows a concise stderr excerpt.
 

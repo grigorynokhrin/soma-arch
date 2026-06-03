@@ -241,6 +241,10 @@ When remux metadata fields are filled, FFmpeg writes basic MP4 metadata during m
 
 Metadata display is player-controlled. Validate at least one common desktop player or Finder/QuickTime path if this behavior is the focus of the rollout. Large MP4 files may spend extra time in metadata post-processing because the container can be rewritten.
 
+Large MP4 metadata writes require ExifTool `-api LargeFileSupport=1`; without it, ExifTool can fail with `End of processing at large atom (LargeFileSupport not enabled)`. Year-only dates such as `2002` are normalized to `2002:01:01 00:00:00` before writing QuickTime date metadata.
+
+If metadata post-processing fails after FFmpeg remux succeeds, the job should finish as `done_with_warnings`, keep the artifact downloadable, and show the ExifTool error in warnings. It must not become `failed` solely because metadata failed.
+
 The description field should appear through Description/LongDescription-style tags. Comment-style aliases are intentionally skipped because some MP4 readers display UTF-8 comment aliases as mojibake.
 
 Final MP4 artifacts should not show FFmpeg/libavformat Encoder values such as `Lavf...`. Publisher and global language are intentionally not supported in v1. Player Language fields should come from selected audio/subtitle stream language tags.

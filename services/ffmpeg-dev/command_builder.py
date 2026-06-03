@@ -7,6 +7,7 @@ from typing import Any
 ALLOWED_METADATA_KEYS = {"title", "artist", "date", "genre", "description"}
 BASIC_MP4_METADATA_KEYS = {"title", "artist", "date", "genre", "description"}
 MP4_ENCODER_DELETE_TAGS = ["QuickTime:Encoder", "ItemList:Encoder", "UserData:Encoder", "Keys:Encoder"]
+EXIFTOOL_LARGE_FILE_ARGS = ["-api", "LargeFileSupport=1"]
 MP4_PLAYER_METADATA_TAGS = {
     "title": ["ItemList:Title", "UserData:Title", "Keys:Title", "Keys:DisplayName"],
     "artist": ["ItemList:Artist", "UserData:Artist", "Keys:Artist", "UserData:Author", "Keys:Author"],
@@ -75,12 +76,34 @@ def clean_metadata(metadata: dict[str, str]) -> dict[str, str]:
     return cleaned
 
 
+def normalize_mp4_metadata_value(key: str, value: str) -> str:
+    value = value.strip()
+    if key == "date":
+        if re.fullmatch(r"\d{4}", value):
+            return f"{value}:01:01 00:00:00"
+        match = re.fullmatch(r"(\d{4})-(\d{2})-(\d{2})", value)
+        if match:
+            return f"{match.group(1)}:{match.group(2)}:{match.group(3)} 00:00:00"
+    return value
+
+
+def metadata_postprocess_warning(error: str) -> str:
+    error = (error or "").strip()
+    if error:
+        return f"MP4 metadata post-processing failed; remuxed MP4 was preserved without complete metadata: {error}"
+    return "MP4 metadata post-processing failed; remuxed MP4 was preserved without complete metadata."
+
+
+def remux_status_for_warnings(warnings: list[str]) -> str:
+    return "done_with_warnings" if warnings else "done"
+
+
 def build_mp4_player_metadata_command(output_path: Path, metadata: dict[str, str], output_root: Path | None = None) -> dict[str, Any]:
     if output_root is not None:
         ensure_output_artifact_path(output_root, output_path)
 
     cleaned = clean_metadata(metadata)
-    args = ["exiftool", "-overwrite_original"]
+    args = ["exiftool", *EXIFTOOL_LARGE_FILE_ARGS, "-overwrite_original"]
     for tag in MP4_ENCODER_DELETE_TAGS:
         args.append(f"-{tag}=")
     warnings: list[str] = []
@@ -90,8 +113,9 @@ def build_mp4_player_metadata_command(output_path: Path, metadata: dict[str, str
         if not tags:
             warnings.append(f"Metadata field {key} has no safe player-compatible ExifTool aliases in v1.")
             continue
+        normalized_value = normalize_mp4_metadata_value(key, value)
         for tag in tags:
-            args.append(f"-{tag}={value}")
+            args.append(f"-{tag}={normalized_value}")
 
     args.append(str(output_path))
     return {"args": args, "warnings": warnings}

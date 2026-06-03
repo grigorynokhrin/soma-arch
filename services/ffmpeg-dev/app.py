@@ -21,6 +21,8 @@ from command_builder import (
     build_remux_args,
     decode_process_bytes,
     ensure_clear_target,
+    metadata_postprocess_warning,
+    remux_status_for_warnings,
     safe_filename_component,
     safe_output_filename,
     subtitle_remux_action,
@@ -359,6 +361,7 @@ async def remux_run(
                 metadata=metadata,
             )
             run_checked(args)
+            artifact = {"name": output_path.name, "path": str(output_path), "kind": "mp4", "size_bytes": output_path.stat().st_size}
             metadata_plan = build_mp4_player_metadata_command(output_path, metadata, OUTPUT_DIR)
             warnings = list(job.get("warnings") or [])
             for warning in metadata_plan["warnings"]:
@@ -370,9 +373,11 @@ async def remux_run(
                 try:
                     run_checked(metadata_plan["args"])
                 except Exception as e:
-                    raise RuntimeError(f"MP4 metadata post-processing failed: {e}") from e
-            artifact = {"name": output_path.name, "path": str(output_path), "kind": "mp4", "size_bytes": output_path.stat().st_size}
-            job.update({"status": "done", "stage": "done", "finished_at": now_iso(), "artifacts": [artifact], "warnings": warnings, "error": None})
+                    warning = metadata_postprocess_warning(str(e))
+                    warnings.append(warning)
+                    append_log("warning: " + warning)
+            status = remux_status_for_warnings(warnings)
+            job.update({"status": status, "stage": status, "finished_at": now_iso(), "artifacts": [artifact], "warnings": warnings, "error": None})
         except Exception as e:
             job.update({"status": "failed", "stage": "failed", "finished_at": now_iso(), "error": str(e)})
         save_job(job)

@@ -14,6 +14,9 @@ from command_builder import (
     decode_process_bytes,
     ensure_output_artifact_path,
     ensure_clear_target,
+    metadata_postprocess_warning,
+    normalize_mp4_metadata_value,
+    remux_status_for_warnings,
     safe_filename_component,
     safe_output_filename,
     subtitle_remux_action,
@@ -331,6 +334,9 @@ def main() -> None:
         assert str(exc) == IMAGE_SUBTITLE_ERROR
 
     assert decode_process_bytes(b"ok\xd1bad") == "ok\ufffdbad"
+    assert normalize_mp4_metadata_value("date", "2002") == "2002:01:01 00:00:00"
+    assert normalize_mp4_metadata_value("date", "2002-05-17") == "2002:05:17 00:00:00"
+    assert normalize_mp4_metadata_value("date", "2002:05:17 12:34:56") == "2002:05:17 12:34:56"
 
     metadata_plan = build_mp4_player_metadata_command(
         Path("/tmp/ffmpeg-data/current/output/Queen of the Damned.mp4"),
@@ -348,6 +354,7 @@ def main() -> None:
     )
     exiftool = metadata_plan["args"]
     assert exiftool[0] == "exiftool"
+    assert_pair(exiftool, "-api", "LargeFileSupport=1")
     assert "-overwrite_original" in exiftool
     assert exiftool[-1] == "/tmp/ffmpeg-data/current/output/Queen of the Damned.mp4"
     assert "-QuickTime:Encoder=" in exiftool
@@ -359,7 +366,7 @@ def main() -> None:
     assert "-Keys:Title=Queen of the Damned" in exiftool
     assert "-ItemList:Artist=Rymer & Abbott, Petroni" in exiftool
     assert "-UserData:Author=Rymer & Abbott, Petroni" in exiftool
-    assert "-ItemList:ContentCreateDate=2002" in exiftool
+    assert "-ItemList:ContentCreateDate=2002:01:01 00:00:00" in exiftool
     assert "-ItemList:Genre=RU-EN" in exiftool
     assert "-ItemList:Description=русский текст" in exiftool
     assert "-ItemList:LongDescription=русский текст" in exiftool
@@ -372,6 +379,20 @@ def main() -> None:
     assert not any("taglib" in item.lower() for item in exiftool)
     assert not any("raw_args" in item or "-unsafe" in item for item in exiftool)
     assert metadata_plan["warnings"] == []
+    metadata_warning = metadata_postprocess_warning("End of processing at large atom (LargeFileSupport not enabled)")
+    assert "remuxed MP4 was preserved" in metadata_warning
+    assert "LargeFileSupport" in metadata_warning
+    assert remux_status_for_warnings([]) == "done"
+    assert remux_status_for_warnings([metadata_warning]) == "done_with_warnings"
+    preserved_artifact_model = {
+        "status": remux_status_for_warnings([metadata_warning]),
+        "artifacts": [{"name": "Queen of the Damned.mp4", "path": "/tmp/ffmpeg-data/current/output/Queen of the Damned.mp4"}],
+        "warnings": [metadata_warning],
+        "error": None,
+    }
+    assert preserved_artifact_model["status"] == "done_with_warnings"
+    assert preserved_artifact_model["artifacts"][0]["name"] == "Queen of the Damned.mp4"
+    assert preserved_artifact_model["error"] is None
 
     template = (HERE / "templates" / "index.html").read_text(encoding="utf-8")
     assert 'name="publisher"' not in template
