@@ -678,8 +678,7 @@ async def submit(
 
     background_tasks.add_task(run_transcription_job, job["job_id"])
 
-    status_url = request.url_for("job_status_page", job_id=job["job_id"])
-    return RedirectResponse(url=str(status_url), status_code=303)
+    return RedirectResponse(url=f"{TEMPLATE_ROOT_PATH}/jobs/{job['job_id']}", status_code=303)
 
 @app.get("/jobs/{job_id}", response_class=HTMLResponse, name="job_status_page")
 async def job_status_page(request: Request, job_id: str):
@@ -713,8 +712,7 @@ async def job_result_page(request: Request, job_id: str):
         return PlainTextResponse("Job not found", status_code=404)
 
     if job.get("status") != "done":
-        status_url = request.url_for("job_status_page", job_id=job_id)
-        return RedirectResponse(url=str(status_url), status_code=303)
+        return RedirectResponse(url=f"{TEMPLATE_ROOT_PATH}/jobs/{job_id}", status_code=303)
 
     return templates.TemplateResponse(
         request,

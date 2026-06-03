@@ -108,7 +108,7 @@
   <p>Серверная Вебморда. Базовый режим: <strong>medium + float32</strong>.</p>
 
   <div class="card">
-    <form action="{{ request.url_for('submit') }}" method="post" enctype="multipart/form-data">
+    <form action="{{ root_path }}/submit" method="post" enctype="multipart/form-data">
       <label for="audio_file">Аудиофайл</label>
       <input id="audio_file" name="audio_file" type="file" accept=".m4a,.mp3,.wav,.flac,.ogg" required>
 
