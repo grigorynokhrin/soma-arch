@@ -59,8 +59,9 @@ No Markdown lint configuration or package script was found during this reconcili
 | `docs/JOB_SCHEMA.md` | CANONICAL | Shared job model and lifecycle expectations. | Source of truth for job schema unless replaced by a versioned schema doc later. |
 | `docs/RELEASES.md` | ACTIVE SUPPORTING | Monolithic release log for Whisper releases. | Current release history source until structured `docs/releases/` entries exist. |
 | `docs/WHISPER_RELEASE_MODEL.md` | ACTIVE SUPPORTING | Whisper dev-derived production release model. | Best current Whisper operations source; should feed `docs/runbooks/whisper.md`. |
-| `docs/FFMPEG_DEV_IMPLEMENTATION.md` | ACTIVE SUPPORTING | FFmpeg implementation behavior and profile details. | Supports future FFmpeg service design doc. Operations now belong in `docs/runbooks/ffmpeg.md`. |
-| `docs/FFMPEG_DEV_SERVICE_SPEC.md` | ACTIVE SUPPORTING | FFmpeg dev service requirements and model. | Supports future `docs/services/ffmpeg.md`; not an operations runbook. |
+| `docs/services/ffmpeg.md` | CANONICAL | Stable FFmpeg architecture and behavior design. | Source of truth for FFmpeg design; operations remain in `docs/runbooks/ffmpeg.md`. |
+| `docs/FFMPEG_DEV_IMPLEMENTATION.md` | ACTIVE SUPPORTING | FFmpeg implementation behavior and profile details. | Supports `docs/services/ffmpeg.md`. Operations now belong in `docs/runbooks/ffmpeg.md`. |
+| `docs/FFMPEG_DEV_SERVICE_SPEC.md` | ACTIVE SUPPORTING | FFmpeg dev service requirements and model. | Supports `docs/services/ffmpeg.md`; not an operations runbook. |
 | `docs/FFMPEG_DEV_ROLLOUT_RUNBOOK.md` | ACTIVE SUPPORTING | Dev-only FFmpeg rollout and troubleshooting. | Still active for `ffmpeg-dev`; stable operations belong in `docs/runbooks/ffmpeg.md`. |
 | `docs/FFMPEG_SERVICE_RUNBOOK.md` | LEGACY | First stable FFmpeg service runbook in flat docs layout. | Superseded by `docs/runbooks/ffmpeg.md`; keep until unique facts are confirmed migrated. |
 | `docs/CADDY_WHISPER_DEV_ROUTE.md` | ACTIVE SUPPORTING | First Whisper dev Caddy route validation and notes. | Supports future gateway runbook; not source of truth for all Caddy routes. |
@@ -91,7 +92,7 @@ No Markdown lint configuration or package script was found during this reconcili
 | Documentation structure | `docs/DOCUMENTATION_ARCHITECTURE.md` | this reconciliation report | Ad hoc flat-doc naming in older docs |
 | Platform inventory | `docs/SERVICES_REGISTRY.md` | service runbooks, gateway reference config | `docs/CURRENT_STATE.md`, `docs/RUNTIME_STATUS.md`, `docs/PROJECT_PHASE_1_STATUS.md` |
 | FFmpeg operations | `docs/runbooks/ffmpeg.md` | `docs/FFMPEG_SERVICE_RUNBOOK.md`, `docs/FFMPEG_DEV_ROLLOUT_RUNBOOK.md`, `docs/FFMPEG_DEV_IMPLEMENTATION.md` | `docs/FFMPEG_SERVICE_RUNBOOK.md` for stable operations |
-| FFmpeg behavior/design | future `docs/services/ffmpeg.md` | `docs/FFMPEG_DEV_SERVICE_SPEC.md`, `docs/FFMPEG_DEV_IMPLEMENTATION.md`, source selfchecks | `docs/runbooks/ffmpeg.md` should not become design spec |
+| FFmpeg behavior/design | `docs/services/ffmpeg.md` | `docs/FFMPEG_DEV_SERVICE_SPEC.md`, `docs/FFMPEG_DEV_IMPLEMENTATION.md`, source selfchecks | `docs/runbooks/ffmpeg.md` should not become design spec |
 | FFmpeg dev rollout | `docs/FFMPEG_DEV_ROLLOUT_RUNBOOK.md` | `docs/runbooks/ffmpeg.md` for stable/dev split | Stable FFmpeg runbooks for dev-specific deployment |
 | Whisper operations | future `docs/runbooks/whisper.md` | `docs/WHISPER_RELEASE_MODEL.md`, `docs/RELEASES.md`, Whisper validation docs | `docs/PROJECT_PHASE_1_STATUS.md`, `docs/CODEX_HANDOFF.md` |
 | Whisper behavior/design | future `docs/services/whisper.md` | `docs/WHISPER_RELEASE_MODEL.md`, `docs/JOB_SCHEMA.md`, `docs/WHISPER_DEV_BOOTSTRAP.md` | scattered phase/status docs |
@@ -133,8 +134,8 @@ Already absorbed into `docs/runbooks/ffmpeg.md`:
 
 Unique information remaining outside the canonical runbook:
 
-- `docs/FFMPEG_DEV_SERVICE_SPEC.md` contains product requirements, API sketches, job/status models, and safety constraints that belong in a future service design doc.
-- `docs/FFMPEG_DEV_IMPLEMENTATION.md` contains implementation details, profile specifics, and limitations that should feed future `docs/services/ffmpeg.md`.
+- `docs/FFMPEG_DEV_SERVICE_SPEC.md` contains product requirements, API sketches, job/status models, and safety constraints that support `docs/services/ffmpeg.md`.
+- `docs/FFMPEG_DEV_IMPLEMENTATION.md` contains implementation details, profile specifics, and limitations that support `docs/services/ffmpeg.md`.
 - `docs/FFMPEG_DEV_ROLLOUT_RUNBOOK.md` remains active for experimental `ffmpeg-dev` rollout, especially server worktree and direct-bind validation.
 - `docs/FFMPEG_SERVICE_RUNBOOK.md` contains the first flat-layout stable runbook and can become legacy once all unique facts are confirmed in `docs/runbooks/ffmpeg.md`.
 
@@ -142,12 +143,12 @@ Classification:
 
 - Stable FFmpeg operations: `docs/runbooks/ffmpeg.md` is canonical.
 - FFmpeg dev operations: `docs/FFMPEG_DEV_ROLLOUT_RUNBOOK.md` remains active supporting.
-- FFmpeg design/behavior: no canonical service design doc exists yet.
+- FFmpeg design/behavior: `docs/services/ffmpeg.md` is canonical.
 - `docs/FFMPEG_SERVICE_RUNBOOK.md` is legacy.
 
 Reconciliation note:
 
-- `docs/SERVICES_REGISTRY.md` still lists `docs/runbooks/ffmpeg.md` as missing in some gap text. That should be corrected in a small follow-up.
+- `docs/SERVICES_REGISTRY.md` has been updated to recognize `docs/runbooks/ffmpeg.md` and `docs/services/ffmpeg.md`.
 
 ## Whisper Reconciliation
 
@@ -238,6 +239,7 @@ Canonical:
 - `docs/SERVICES_REGISTRY.md`
 - `docs/FIRST_RELEASE_PLAYBOOK.md`
 - `docs/runbooks/ffmpeg.md`
+- `docs/services/ffmpeg.md`
 - `docs/DECISIONS.md`
 - `docs/TARGET_ARCHITECTURE.md`
 - `docs/SYSTEM_GOALS.md`
@@ -289,16 +291,14 @@ Obsolete:
 
 Priority 1, before creating more docs:
 
-1. Update `docs/SERVICES_REGISTRY.md` so it recognizes `docs/runbooks/ffmpeg.md` as existing and canonical.
-2. Add short supersession notes to `docs/FFMPEG_SERVICE_RUNBOOK.md` and `docs/PHASE_2_PLAN.md` instead of leaving them as silently competing docs.
-3. Decide whether `docs/FFMPEG_DEV_ROLLOUT_RUNBOOK.md` remains in the flat docs directory or later moves to target runbook/playbook structure.
+1. Add short supersession notes to `docs/FFMPEG_SERVICE_RUNBOOK.md` and `docs/PHASE_2_PLAN.md` instead of leaving them as silently competing docs.
+2. Decide whether `docs/FFMPEG_DEV_ROLLOUT_RUNBOOK.md` remains in the flat docs directory or later moves to target runbook/playbook structure.
 
 Priority 2, do soon:
 
 1. Create `docs/runbooks/whisper.md` from `docs/WHISPER_RELEASE_MODEL.md`, `docs/RELEASES.md`, and Whisper validation docs.
 2. Create `docs/runbooks/gateway.md` from `gateway/myservices/Caddyfile.current`, `docs/CADDY_WHISPER_DEV_ROUTE.md`, and current FFmpeg route notes.
 3. Create `docs/runbooks/home.md` to document Home source ownership, publication rules, rebuild/restart/readiness, and validation.
-4. Create `docs/services/ffmpeg.md` from the FFmpeg spec and implementation docs.
 
 Priority 3, can wait:
 
@@ -322,7 +322,7 @@ Reason:
 
 - FFmpeg now has a canonical operational runbook.
 - Whisper is a stable production service, but its operational knowledge is spread across release model, release notes, dev bootstrap, validation reports, and phase-status documents.
-- Creating the Whisper runbook will reduce current operational risk more than adding a FFmpeg design doc.
+- Creating the Whisper runbook will reduce current operational risk now that the FFmpeg design doc exists.
 - Archive/deprecation cleanup should wait until Whisper/Home/Gateway canonical owners exist, otherwise useful facts may be buried before they are absorbed.
 
-After the Whisper runbook, create the FFmpeg service design doc so behavior and profile policy have a canonical home separate from operations.
+After the Whisper runbook, create Home and Gateway runbooks so routing and portal publication have canonical operational homes.
