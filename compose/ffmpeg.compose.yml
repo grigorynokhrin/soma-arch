@@ -1,0 +1,33 @@
+name: soma-ffmpeg
+
+services:
+  ffmpeg:
+    container_name: soma-ffmpeg
+    image: soma-ffmpeg:local
+    build:
+      context: ../services/ffmpeg
+      dockerfile: Dockerfile
+      args:
+        APP_UID: "1000"
+        APP_GID: "990"
+    environment:
+      TZ: America/Chicago
+      FFMPEG_ROOT_PATH: /ffmpeg
+      FFMPEG_SERVICE_NAME: ffmpeg
+      FFMPEG_SERVICE_TITLE: FFmpeg
+      FFMPEG_DATA_DIR: /data
+    volumes:
+      - /srv/soma/data/ffmpeg:/data
+    ports:
+      - "127.0.0.1:18083:8000"
+    networks:
+      default:
+      caddy_dev:
+        aliases:
+          - soma-ffmpeg
+    restart: unless-stopped
+
+networks:
+  caddy_dev:
+    external: true
+    name: compose_default

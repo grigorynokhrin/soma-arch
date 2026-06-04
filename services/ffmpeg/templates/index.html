@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>{{ title }}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; max-width: 1100px; margin: 32px auto; padding: 0 16px; line-height: 1.45; background: #f7f7f5; color: #111; }
+    .section, .card { background: #fff; border: 1px solid #d9d9d3; border-radius: 8px; padding: 18px; margin-bottom: 18px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+    label { display: block; font-weight: 600; margin: 10px 0 4px; }
+    input, select, textarea, button { width: 100%; box-sizing: border-box; padding: 9px; }
+    button { margin-top: 12px; border: 1px solid #222; background: #fff; border-radius: 6px; cursor: pointer; }
+    table { width: 100%; border-collapse: collapse; margin: 8px 0 12px; }
+    th, td { border-bottom: 1px solid #e5e5df; padding: 6px; text-align: left; vertical-align: top; }
+    .muted { color: #666; }
+    .notice { color: #335c00; background: #f0f7e6; border: 1px solid #bfd99b; border-radius: 6px; padding: 10px; margin-top: 10px; }
+    .warning { color: #7a4a00; background: #fff6df; border: 1px solid #e1bd68; border-radius: 6px; padding: 10px; margin-top: 10px; }
+    .error { color: #9b1c1c; white-space: pre-wrap; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; word-break: break-word; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <h1>{{ title }}</h1>
+
+  {% if error %}
+  <div class="card error">{{ error }}</div>
+  {% endif %}
+
+  <div class="section">
+    <h2>MP4 remux</h2>
+    <form action="{{ root_path }}/remux/probe" method="post" enctype="multipart/form-data" data-submit-message="Uploading and probing file. Large multi-GB files may take several minutes. Do not close this page.">
+      <label for="video_file">Video file</label>
+      <input id="video_file" name="video_file" type="file" accept="video/*,.mkv,.mp4,.mov,.avi,.webm,.m2ts,.ts" required>
+      <button type="submit">Probe</button>
+      <div class="notice hidden" data-submit-status></div>
+    </form>
+
+    <div id="stale_probe_notice" class="warning hidden">New file selected. Press Probe to analyze it before remux.</div>
+
+    {% if show_probe and probe %}
+    <div id="probe_result" class="card">
+      <h3>Probe result</h3>
+      <div class="muted">Chapters: {{ probe.chapters|length }}</div>
+
+      <h4>Video streams</h4>
+      <table>
+        <tr><th>Index</th><th>Codec</th><th>Size</th><th>Aspect</th></tr>
+        {% for stream in probe.video_streams %}
+        <tr><td>{{ stream.index }}</td><td>{{ stream.codec_name }}</td><td>{{ stream.width }}x{{ stream.height }}</td><td>{{ stream.display_aspect_ratio or "?" }}</td></tr>
+        {% endfor %}
+      </table>
+
+      <form action="{{ root_path }}/remux/run" method="post" data-submit-message="Running remux. Do not close this page.">
+        <h4>Audio streams</h4>
+        <table>
+          <tr><th>Keep</th><th>Default</th><th>Index</th><th>Codec</th><th>Language</th><th>Title</th><th>Channels</th></tr>
+          {% for stream in probe.audio_streams %}
+          <tr>
+            <td><input type="checkbox" name="audio_streams" value="{{ stream.index }}" checked></td>
+            <td><input type="radio" name="default_audio_stream" value="{{ stream.index }}" {% if loop.first %}checked{% endif %}></td>
+            <td>{{ stream.index }}</td>
+            <td>{{ stream.codec_name }}</td>
+            <td>{{ stream.language or "" }}</td>
+            <td>{{ stream.title or "" }}</td>
+            <td>{{ stream.channels or "" }}</td>
+          </tr>
+          {% endfor %}
+        </table>
+
+        <h4>Subtitle streams</h4>
+        <table>
+          <tr><th>Keep</th><th>Index</th><th>Codec</th><th>MP4 remux</th><th>Language</th><th>Title</th></tr>
+          {% for stream in probe.subtitle_streams %}
+          <tr>
+            <td><input type="checkbox" name="subtitle_streams" value="{{ stream.index }}"></td>
+            <td>{{ stream.index }}</td>
+            <td>{{ stream.codec_name }}</td>
+            <td>{{ stream.remux_action or "" }}</td>
+            <td>{{ stream.language or "" }}</td>
+            <td>{{ stream.title or "" }}</td>
+          </tr>
+          {% endfor %}
+        </table>
+
+        <label for="output_name">Output filename</label>
+        <input id="output_name" name="output_name" value="remuxed">
+
+        <div class="grid">
+          <div>
+            <label for="meta_title">title</label>
+            <input id="meta_title" name="title">
+          </div>
+          <div>
+            <label for="meta_artist">artist</label>
+            <input id="meta_artist" name="artist">
+          </div>
+          <div>
+            <label for="meta_date">date</label>
+            <input id="meta_date" name="date">
+          </div>
+          <div>
+            <label for="meta_genre">genre</label>
+            <input id="meta_genre" name="genre">
+          </div>
+          <div>
+            <label for="meta_description">description</label>
+            <textarea id="meta_description" name="description" rows="3"></textarea>
+          </div>
+        </div>
+
+        <button type="submit">Remux to MP4</button>
+        <div class="notice hidden" data-submit-status></div>
+      </form>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="section">
+    <h2>Batch conversion by profile</h2>
+    <form action="{{ root_path }}/convert/run" method="post" enctype="multipart/form-data" data-submit-message="Uploading and converting files. Large files may take a long time. Do not close this page.">
+      <label for="video_files">Video files</label>
+      <input id="video_files" name="video_files" type="file" accept="video/*,.mkv,.mp4,.mov,.avi,.webm,.m2ts,.ts" multiple required>
+
+      <label for="profile_id">Profile</label>
+      <select id="profile_id" name="profile_id">
+        {% for profile in profiles %}
+        <option value="{{ profile.id }}">{{ profile.label }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit">Convert</button>
+      <div class="notice hidden" data-submit-status></div>
+    </form>
+  </div>
+
+  {% if job %}
+  <div class="section">
+    <h2>Current job</h2>
+    <div>Status: <span class="mono">{{ job.status }}</span></div>
+    <div>Stage: <span class="mono">{{ job.stage }}</span></div>
+    {% if job.error %}<div class="error">{{ job.error }}</div>{% endif %}
+    {% if job.warnings %}
+    <div class="warning">
+      <strong>Warnings</strong>
+      {% for warning in job.warnings %}
+      <div>{{ warning }}</div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    <p><a href="{{ root_path }}/job/result">Open result</a> · <a href="{{ root_path }}/job/status.json">status.json</a></p>
+    <form action="{{ root_path }}/job/clear" method="post">
+      <button type="submit">Clear current job</button>
+    </form>
+  </div>
+  {% endif %}
+<script>
+  document.querySelectorAll('form[data-submit-message]').forEach((form) => {
+    form.addEventListener('submit', () => {
+      const button = form.querySelector('button[type="submit"]');
+      const status = form.querySelector('[data-submit-status]');
+      if (button) button.disabled = true;
+      if (status) {
+        status.textContent = form.dataset.submitMessage;
+        status.classList.remove('hidden');
+      }
+    });
+  });
+
+  const videoFile = document.getElementById('video_file');
+  const probeResult = document.getElementById('probe_result');
+  const staleNotice = document.getElementById('stale_probe_notice');
+  if (videoFile && probeResult && staleNotice) {
+    videoFile.addEventListener('change', () => {
+      if (videoFile.files.length) {
+        probeResult.style.opacity = '0.45';
+        staleNotice.classList.remove('hidden');
+      }
+    });
+  }
+</script>
+</body>
+</html>
