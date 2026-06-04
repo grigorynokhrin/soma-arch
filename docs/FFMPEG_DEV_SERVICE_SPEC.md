@@ -114,6 +114,7 @@ The web UI should support:
 - one page with two independent workflow blocks and two independent submit buttons
 - an upper MP4 remux block for exactly one file
 - a lower batch conversion block for one or more files and one predefined profile
+- batch profile labels should expose the intended output container, such as AVI or VOB PAL, before conversion starts
 - upload file and/or select file from an approved server-side input folder
 - probe streams before conversion
 - display a stream table
@@ -409,7 +410,7 @@ Warning format:
 
 This differs from MP4 remux mode: MP4 remux keeps video/audio as stream copy and converts text subtitles to `mov_text` streams when needed. Batch conversion does not burn subtitles.
 
-Batch conversion should persist the exact runtime FFmpeg command in `ffmpeg_commands` before execution so runtime behavior can be audited from `status.json` and `job.json`.
+Batch conversion should persist the exact runtime FFmpeg command in `ffmpeg_commands` before execution so runtime behavior can be audited from `status.json` and `job.json`. The same command should also be appended to `job.log` before execution.
 
 PAL VOB aspect policy:
 

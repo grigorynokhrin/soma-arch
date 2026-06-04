@@ -269,6 +269,21 @@ PAL VOB checks:
 - LaCie SS 4:3 VOB PAL: 720x576 storage, 25 fps, MPEG-2, DAR 4:3, center-crop 16:9 source to 4:3 visible image, no pad/black bars.
 - LaCie SS 16:9 VOB PAL: 720x576 storage, 25 fps, MPEG-2, DAR 16:9 anamorphic PAL, no crop for 16:9 source, no pad/black bars.
 
+Server validation after rebuild used input `2022 remuxed 1 2 3.mp4`.
+
+Validated profiles:
+
+- `lacie-ss-16x9-vob-pal`
+- `lacie-ss-4x3-vob-pal`
+
+Observed results:
+
+- no burned subtitles
+- no added black bars
+- no visible horizontal or vertical distortion
+- correct PAL aspect behavior
+- unsupported subtitles were dropped with warnings
+
 ### Caddy Route Fails
 
 Check that `soma-ffmpeg-dev` is attached to the external Caddy/dev network:

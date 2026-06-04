@@ -229,7 +229,7 @@ Conversion maps:
 
 FFmpeg commands are generated from structured profile fields. There is no raw command input and no `shell=True`.
 
-Batch conversion records the exact generated FFmpeg command in `job.json` / `status.json` under `ffmpeg_commands` before the process starts. This is the runtime source of truth for debugging server-side conversion behavior.
+Batch conversion records the exact generated FFmpeg command in `job.json` / `status.json` under `ffmpeg_commands` before the process starts, and also writes it to `job.log`. This is the runtime source of truth for debugging server-side conversion behavior.
 
 These v1 profiles are CPU encode profiles. They do not request NVENC, NVDEC, CUDA, or GPU device access.
 
@@ -259,6 +259,13 @@ Current profiles:
 - `lacie-ss-4x3-vob-pal`
 - `lacie-ss-16x9-vob-pal`
 - `lacie-ss-16x9-avi`
+
+The UI labels include the output container for the legacy conversion profiles so the container choice is visible before conversion:
+
+- `Cowon iAudio D2+ (AVI)`
+- `LaCie SS 4:3 VOB PAL`
+- `LaCie SS 16:9 VOB PAL`
+- `LaCie SS 16:9 (AVI)`
 
 ### Cowon iAudio D2+
 
