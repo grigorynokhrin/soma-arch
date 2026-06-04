@@ -599,7 +599,7 @@ Assumptions to verify during live work:
 - `docs/FIRST_RELEASE_PLAYBOOK.md`
 - `docs/runbooks/ffmpeg.md`
 - `docs/runbooks/whisper.md`
-- future `docs/services/home.md` TODO
+- `docs/services/home.md`
 
 ## Known Gaps
 
@@ -610,5 +610,3 @@ Assumptions to verify during live work:
 - Exact Home readiness command is not documented beyond HTTP route checks.
 - Exact Home application log behavior is not documented.
 - Exact Home rollback image/tag strategy is not documented.
-- Home service design document is missing: `docs/services/home.md`.
-- Gateway runbook is still missing: `docs/runbooks/gateway.md`.

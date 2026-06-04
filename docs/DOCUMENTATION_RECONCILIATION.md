@@ -61,6 +61,7 @@ No Markdown lint configuration or package script was found during this reconcili
 | `docs/runbooks/whisper.md` | CANONICAL | Stable Whisper operational runbook. | Source of truth for Whisper operations. |
 | `docs/runbooks/home.md` | CANONICAL | Home/MyServices operational runbook. | Source of truth for Home publication, rebuild/restart, validation, and diagnostics. |
 | `docs/runbooks/gateway.md` | CANONICAL | Gateway/Caddy operational runbook. | Source of truth for Gateway inspection, route validation, reload boundaries, and diagnostics. |
+| `docs/services/home.md` | CANONICAL | Home/MyServices architecture and behavior design. | Source of truth for Home purpose, publication model, navigation model, and boundaries. |
 | `docs/services/whisper.md` | CANONICAL | Stable Whisper architecture and behavior design. | Source of truth for Whisper design; operations remain in `docs/runbooks/whisper.md`. |
 | `docs/WHISPER_RELEASE_MODEL.md` | ACTIVE SUPPORTING | Whisper dev-derived production release model. | Supports `docs/runbooks/whisper.md` and future `docs/services/whisper.md`. |
 | `docs/services/ffmpeg.md` | CANONICAL | Stable FFmpeg architecture and behavior design. | Source of truth for FFmpeg design; operations remain in `docs/runbooks/ffmpeg.md`. |
@@ -101,6 +102,7 @@ No Markdown lint configuration or package script was found during this reconcili
 | Whisper operations | `docs/runbooks/whisper.md` | `docs/WHISPER_RELEASE_MODEL.md`, `docs/RELEASES.md`, Whisper validation docs | `docs/PROJECT_PHASE_1_STATUS.md`, `docs/CODEX_HANDOFF.md` |
 | Whisper behavior/design | `docs/services/whisper.md` | `docs/WHISPER_RELEASE_MODEL.md`, `docs/JOB_SCHEMA.md`, `docs/WHISPER_DEV_BOOTSTRAP.md` | scattered phase/status docs |
 | Home operations | `docs/runbooks/home.md` | `docs/SERVICES_REGISTRY.md`, `docs/runbooks/ffmpeg.md`, `docs/FFMPEG_SERVICE_RUNBOOK.md` | `docs/CURRENT_STATE.md` and `docs/RUNTIME_STATUS.md` as current instructions |
+| Home behavior/design | `docs/services/home.md` | `docs/runbooks/home.md`, `docs/SERVICES_REGISTRY.md`, `docs/FIRST_RELEASE_PLAYBOOK.md` | service runbooks as Home architecture docs |
 | Gateway/Caddy operations | `docs/runbooks/gateway.md` | `gateway/myservices/Caddyfile.current`, `docs/CADDY_WHISPER_DEV_ROUTE.md`, FFmpeg runbook route sections | individual service rollout docs as global Caddy source |
 | Target architecture | `docs/TARGET_ARCHITECTURE.md` | `docs/SYSTEM_GOALS.md`, `docs/DECISIONS.md` | migration/status snapshots |
 | Runtime healthcheck behavior | `docs/RUNTIME_HEALTHCHECK.md` until platform runbook exists | `runtime/README.md`, `docs/RUNTIME_MAKEFILE.md` | service-specific release reports |
@@ -205,7 +207,7 @@ Home:
 - No tracked Home source was identified in this repository.
 - The current expected Home UX is documented as `FFmpeg -> /ffmpeg/`.
 - `docs/runbooks/home.md` is now the canonical Home operational source.
-- Home behavior/design still needs future owner `docs/services/home.md`.
+- `docs/services/home.md` is now the canonical Home behavior/design source.
 
 Gateway/Caddy:
 
@@ -252,6 +254,7 @@ Canonical:
 - `docs/runbooks/gateway.md`
 - `docs/services/ffmpeg.md`
 - `docs/services/whisper.md`
+- `docs/services/home.md`
 - `docs/DECISIONS.md`
 - `docs/TARGET_ARCHITECTURE.md`
 - `docs/SYSTEM_GOALS.md`
@@ -308,8 +311,7 @@ Priority 1, before creating more docs:
 
 Priority 2, do soon:
 
-1. Create `docs/services/home.md` for Home behavior/design ownership.
-2. Create `docs/services/gateway.md` for Gateway behavior/design ownership.
+1. Create `docs/services/gateway.md` for Gateway behavior/design ownership.
 
 Priority 3, can wait:
 
@@ -327,15 +329,15 @@ Options evaluated:
 - Option B: Create FFmpeg service design doc.
 - Option C: Perform archive/deprecation cleanup.
 
-Recommended next step: create `docs/services/home.md` or `docs/services/gateway.md`.
+Recommended next step: create `docs/services/gateway.md`.
 
 Reason:
 
 - FFmpeg now has a canonical operational runbook.
 - Whisper now has a canonical operational runbook.
 - Gateway now has a canonical operational runbook.
-- Home now has a canonical operational runbook, but still lacks a service design document.
+- Home now has canonical operational and service design documents.
 - Gateway still lacks a service design document.
 - Archive/deprecation cleanup should wait until Whisper/Home/Gateway canonical owners exist, otherwise useful facts may be buried before they are absorbed.
 
-Create Home and Gateway service design docs so routing and portal architecture have canonical homes separate from operations.
+Create the Gateway service design doc so routing architecture has a canonical home separate from operations.
