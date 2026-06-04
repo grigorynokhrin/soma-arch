@@ -60,7 +60,7 @@ If duplication is unavoidable, mark one location as canonical.
 | Whisper dev | service | dev | server-dev | `/whisper-dev/` | `127.0.0.1:18080 -> 8000` | `soma-whisper-dev` | `whisper-dev` | Dev validation for Whisper source | `docs/WHISPER_DEV_BOOTSTRAP.md`, `docs/WHISPER_DEV_SMOKE_TEST.md`, `docs/WHISPER_DEV_RETENTION_TEST.md` | No dedicated `docs/runbooks/whisper-dev.md`; optional dev healthcheck exists in runtime script. |
 | FFmpeg | service | stable | server-stable | `/ffmpeg/` | `127.0.0.1:18083 -> 8000` | `soma-ffmpeg` | `ffmpeg` | Stable user-facing FFmpeg web tool | `docs/runbooks/ffmpeg.md`, `docs/services/ffmpeg.md` | Canonical runbook and service design now exist; legacy flat runbook remains as supporting history. |
 | FFmpeg dev | service | dev | server-dev | `/ffmpeg-dev/` | `127.0.0.1:18082 -> 8000` | `soma-ffmpeg-dev` | `ffmpeg-dev` | Experimental FFmpeg development and v2 work | `docs/FFMPEG_DEV_IMPLEMENTATION.md`, `docs/FFMPEG_DEV_ROLLOUT_RUNBOOK.md`, `docs/FFMPEG_DEV_SERVICE_SPEC.md` | Must not be published as Home user-facing entry. |
-| Home / MyServices | supporting component | stable | home | `/myservices/` | `8000` documented as container port | `myservices-home` | `home` | Publishes stable tools only | `docs/RUNTIME_STATUS.md`, `docs/CURRENT_STATE.md`, `docs/FFMPEG_SERVICE_RUNBOOK.md` | Tracked Home source is not present in this repo; live source is under `/home/grigorynokhrin/myservices/home`. Dedicated runbook/service doc missing. |
+| Home / MyServices | supporting component | stable | home | `/myservices/` | `8000` documented as container port | `myservices-home` | `home` | Publishes stable tools only | `docs/runbooks/home.md`, `docs/RUNTIME_STATUS.md`, `docs/CURRENT_STATE.md`, `docs/FFMPEG_SERVICE_RUNBOOK.md` | Tracked Home source is not present in this repo; live source is under `/home/grigorynokhrin/myservices/home`. Dedicated service design doc missing. |
 | Caddy / Gateway | supporting component | maintenance | gateway | `/`, `/myservices/*`, `/ffmpeg*`, `/ffmpeg-dev*`, `/whisper-dev*` | host `:80`; upstreams use service port `8000` where documented | `myservices-caddy` | `caddy` | Routes Home and services | `gateway/myservices/Caddyfile.current`, `docs/CADDY_WHISPER_DEV_ROUTE.md`, `docs/FFMPEG_SERVICE_RUNBOOK.md` | Live Caddyfile may differ from tracked reference; inspect mounts before live changes. Dedicated runbook/service doc missing. |
 | image-upscale | service | deprecated | server-stable | `/myservices/image-upscale/` tracked route | `7860` upstream in tracked Caddyfile | `image-upscale` | TODO: not tracked in repo compose | Historical image upscaling service | `docs/CURRENT_STATE.md`, `docs/RUNTIME_STATUS.md` | Runtime status documented as exited/stopped in `docs/RUNTIME_STATUS.md`; not in current task's known stable service set. |
 | OCR placeholder | placeholder | prototype | gateway | `/myservices/ocr*` | none | none | none | Placeholder route only | `gateway/myservices/Caddyfile.current` | Caddy responds `OCR placeholder`; no service source/container tracked. |
@@ -347,6 +347,7 @@ Known server paths:
 
 Related docs:
 
+- `docs/runbooks/home.md`
 - `docs/CURRENT_STATE.md`
 - `docs/RUNTIME_STATUS.md`
 - `docs/FFMPEG_SERVICE_RUNBOOK.md`
@@ -361,7 +362,6 @@ Validation expectations:
 
 Known gaps / TODOs:
 
-- Create `docs/runbooks/home.md`.
 - Create `docs/services/home.md`.
 - Track or document Home source ownership more explicitly.
 
@@ -444,17 +444,12 @@ Known gaps / TODOs:
 | Whisper dev | Yes | Partial: `docs/WHISPER_DEV_BOOTSTRAP.md` | Partial: dev bootstrap/smoke docs | N/A | Yes: smoke/retention docs | Partial |
 | FFmpeg | Yes | Yes: `docs/services/ffmpeg.md` | Yes: `docs/runbooks/ffmpeg.md` | Partial: rollout docs, no structured release file | Partial: runbook and rollout evidence | Yes: disable notes in `docs/runbooks/ffmpeg.md` |
 | FFmpeg dev | Yes | Yes: `docs/FFMPEG_DEV_SERVICE_SPEC.md` | Yes: `docs/FFMPEG_DEV_ROLLOUT_RUNBOOK.md` | N/A | Partial: documented rollout validations | Yes: stop/cleanup in rollout runbook |
-| Home / MyServices | Yes | Missing target doc | Missing target runbook | N/A | Partial runtime status docs | TODO |
+| Home / MyServices | Yes | Missing target doc | Yes: `docs/runbooks/home.md` | N/A | Partial runtime status docs | Partial: disable notes in `docs/runbooks/home.md` |
 | Caddy / Gateway | Yes | Missing target doc | Partial: Caddy route docs | N/A | Partial route validation docs | Partial |
 
 Expected missing docs:
 
-- `docs/runbooks/ffmpeg.md`
-- `docs/runbooks/whisper.md`
-- `docs/runbooks/home.md`
 - `docs/runbooks/gateway.md`
-- `docs/services/ffmpeg.md`
-- `docs/services/whisper.md`
 - `docs/services/home.md`
 - `docs/services/gateway.md`
 
@@ -479,11 +474,10 @@ Do not create those files as part of this registry task.
 Recommended next documentation tasks:
 
 1. Create `docs/runbooks/gateway.md` from Caddy route docs and tracked gateway config.
-2. Create `docs/runbooks/home.md` to document Home source ownership, rebuild, readiness, and publication rules.
-3. Create `docs/services/home.md`.
-4. Create `docs/services/gateway.md`.
-5. Decide whether to split `docs/RELEASES.md` into structured `docs/releases/*.md` files.
-6. Decide whether to create structured validation reports under `docs/validations/`.
+2. Create `docs/services/home.md`.
+3. Create `docs/services/gateway.md`.
+4. Decide whether to split `docs/RELEASES.md` into structured `docs/releases/*.md` files.
+5. Decide whether to create structured validation reports under `docs/validations/`.
 
 ## 10. Links To Process Docs
 

@@ -59,6 +59,7 @@ No Markdown lint configuration or package script was found during this reconcili
 | `docs/JOB_SCHEMA.md` | CANONICAL | Shared job model and lifecycle expectations. | Source of truth for job schema unless replaced by a versioned schema doc later. |
 | `docs/RELEASES.md` | ACTIVE SUPPORTING | Monolithic release log for Whisper releases. | Current release history source until structured `docs/releases/` entries exist. |
 | `docs/runbooks/whisper.md` | CANONICAL | Stable Whisper operational runbook. | Source of truth for Whisper operations. |
+| `docs/runbooks/home.md` | CANONICAL | Home/MyServices operational runbook. | Source of truth for Home publication, rebuild/restart, validation, and diagnostics. |
 | `docs/services/whisper.md` | CANONICAL | Stable Whisper architecture and behavior design. | Source of truth for Whisper design; operations remain in `docs/runbooks/whisper.md`. |
 | `docs/WHISPER_RELEASE_MODEL.md` | ACTIVE SUPPORTING | Whisper dev-derived production release model. | Supports `docs/runbooks/whisper.md` and future `docs/services/whisper.md`. |
 | `docs/services/ffmpeg.md` | CANONICAL | Stable FFmpeg architecture and behavior design. | Source of truth for FFmpeg design; operations remain in `docs/runbooks/ffmpeg.md`. |
@@ -98,7 +99,7 @@ No Markdown lint configuration or package script was found during this reconcili
 | FFmpeg dev rollout | `docs/FFMPEG_DEV_ROLLOUT_RUNBOOK.md` | `docs/runbooks/ffmpeg.md` for stable/dev split | Stable FFmpeg runbooks for dev-specific deployment |
 | Whisper operations | `docs/runbooks/whisper.md` | `docs/WHISPER_RELEASE_MODEL.md`, `docs/RELEASES.md`, Whisper validation docs | `docs/PROJECT_PHASE_1_STATUS.md`, `docs/CODEX_HANDOFF.md` |
 | Whisper behavior/design | `docs/services/whisper.md` | `docs/WHISPER_RELEASE_MODEL.md`, `docs/JOB_SCHEMA.md`, `docs/WHISPER_DEV_BOOTSTRAP.md` | scattered phase/status docs |
-| Home operations | future `docs/runbooks/home.md` | `docs/SERVICES_REGISTRY.md`, `docs/runbooks/ffmpeg.md`, `docs/FFMPEG_SERVICE_RUNBOOK.md` | `docs/CURRENT_STATE.md` and `docs/RUNTIME_STATUS.md` as current instructions |
+| Home operations | `docs/runbooks/home.md` | `docs/SERVICES_REGISTRY.md`, `docs/runbooks/ffmpeg.md`, `docs/FFMPEG_SERVICE_RUNBOOK.md` | `docs/CURRENT_STATE.md` and `docs/RUNTIME_STATUS.md` as current instructions |
 | Gateway/Caddy operations | future `docs/runbooks/gateway.md` | `gateway/myservices/Caddyfile.current`, `docs/CADDY_WHISPER_DEV_ROUTE.md`, FFmpeg runbook route sections | individual service rollout docs as global Caddy source |
 | Target architecture | `docs/TARGET_ARCHITECTURE.md` | `docs/SYSTEM_GOALS.md`, `docs/DECISIONS.md` | migration/status snapshots |
 | Runtime healthcheck behavior | `docs/RUNTIME_HEALTHCHECK.md` until platform runbook exists | `runtime/README.md`, `docs/RUNTIME_MAKEFILE.md` | service-specific release reports |
@@ -202,8 +203,8 @@ Home:
 
 - No tracked Home source was identified in this repository.
 - The current expected Home UX is documented as `FFmpeg -> /ffmpeg/`.
-- Home operational knowledge is scattered across `docs/SERVICES_REGISTRY.md`, `docs/runbooks/ffmpeg.md`, `docs/FFMPEG_SERVICE_RUNBOOK.md`, `docs/CURRENT_STATE.md`, and `docs/RUNTIME_STATUS.md`.
-- Future owner should be `docs/runbooks/home.md` for operations and `docs/services/home.md` for behavior/design.
+- `docs/runbooks/home.md` is now the canonical Home operational source.
+- Home behavior/design still needs future owner `docs/services/home.md`.
 
 Gateway/Caddy:
 
@@ -245,6 +246,7 @@ Canonical:
 - `docs/FIRST_RELEASE_PLAYBOOK.md`
 - `docs/runbooks/ffmpeg.md`
 - `docs/runbooks/whisper.md`
+- `docs/runbooks/home.md`
 - `docs/services/ffmpeg.md`
 - `docs/services/whisper.md`
 - `docs/DECISIONS.md`
@@ -304,7 +306,7 @@ Priority 1, before creating more docs:
 Priority 2, do soon:
 
 1. Create `docs/runbooks/gateway.md` from `gateway/myservices/Caddyfile.current`, `docs/CADDY_WHISPER_DEV_ROUTE.md`, and current FFmpeg route notes.
-2. Create `docs/runbooks/home.md` to document Home source ownership, publication rules, rebuild/restart/readiness, and validation.
+2. Create `docs/services/home.md` for Home behavior/design ownership.
 
 Priority 3, can wait:
 
@@ -322,13 +324,14 @@ Options evaluated:
 - Option B: Create FFmpeg service design doc.
 - Option C: Perform archive/deprecation cleanup.
 
-Recommended next step: create `docs/runbooks/gateway.md` or `docs/runbooks/home.md`.
+Recommended next step: create `docs/runbooks/gateway.md`.
 
 Reason:
 
 - FFmpeg now has a canonical operational runbook.
 - Whisper now has a canonical operational runbook.
-- Gateway and Home still lack canonical operational runbooks even though they publish and route stable services.
+- Gateway still lacks a canonical operational runbook even though it routes stable services.
+- Home now has a canonical operational runbook, but still lacks a service design document.
 - Archive/deprecation cleanup should wait until Whisper/Home/Gateway canonical owners exist, otherwise useful facts may be buried before they are absorbed.
 
-After Gateway and Home runbooks, create Home and Gateway service design docs so routing and portal architecture have canonical homes separate from operations.
+After the Gateway runbook, create Home and Gateway service design docs so routing and portal architecture have canonical homes separate from operations.
