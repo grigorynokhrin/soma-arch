@@ -16,7 +16,7 @@ from fastapi.templating import Jinja2Templates
 
 from command_builder import (
     ALLOWED_METADATA_KEYS,
-    build_convert_plan,
+    build_runtime_convert_plan,
     build_mp4_player_metadata_command,
     build_remux_args,
     decode_process_bytes,
@@ -136,6 +136,7 @@ def public_status(job: dict[str, Any]) -> dict[str, Any]:
         "input_files": job.get("input_files", []),
         "profile_id": job.get("profile_id"),
         "warnings": job.get("warnings", []),
+        "ffmpeg_commands": job.get("ffmpeg_commands", []),
     }
 
 
@@ -406,6 +407,7 @@ async def convert_run(profile_id: str = Form(...), video_files: list[UploadFile]
             "input_files": [],
             "artifacts": [],
             "warnings": [],
+            "ffmpeg_commands": [],
         }
         save_job(job)
 
@@ -416,6 +418,7 @@ async def convert_run(profile_id: str = Form(...), video_files: list[UploadFile]
             artifacts = []
             input_items = []
             warnings = []
+            ffmpeg_commands = []
             for idx, upload in enumerate(uploads, 1):
                 original = safe_name(upload.filename)
                 input_path = INPUT_DIR / f"{idx:03d}-{original}"
@@ -424,8 +427,14 @@ async def convert_run(profile_id: str = Form(...), video_files: list[UploadFile]
                 append_log(f"uploaded convert input {idx}/{len(uploads)}: {original}")
 
                 probe = normalize_probe(ffprobe_json(input_path))
-                output_path = OUTPUT_DIR / safe_output_filename(f"{safe_stem(original)}-{profile_id}", f"output-{profile_id}", profile["extension"])
-                plan = build_convert_plan(input_path, output_path, profile, probe)
+                plan = build_runtime_convert_plan(original, input_path, OUTPUT_DIR, profile, probe)
+                output_path = plan["output_path"]
+                command_record = {"input": original, "profile_id": profile_id, "args": plan["args"], "command": plan["command"]}
+                ffmpeg_commands.append(command_record)
+                append_log(f"convert command {idx}/{len(uploads)}: {plan['command']}")
+                job.update({"ffmpeg_commands": ffmpeg_commands, "stage": f"running {idx}/{len(uploads)}"})
+                save_job(job)
+
                 for warning in plan["warnings"]:
                     warnings.append(f"{original}: {warning}")
                     append_log("warning: " + warnings[-1])
@@ -440,7 +449,7 @@ async def convert_run(profile_id: str = Form(...), video_files: list[UploadFile]
                         "size_bytes": output_path.stat().st_size,
                     }
                 )
-                job.update({"input_files": input_items, "artifacts": artifacts, "warnings": warnings, "stage": f"converted {idx}/{len(uploads)}"})
+                job.update({"input_files": input_items, "artifacts": artifacts, "warnings": warnings, "ffmpeg_commands": ffmpeg_commands, "stage": f"converted {idx}/{len(uploads)}"})
                 save_job(job)
 
             job.update({"status": "done", "stage": "done", "finished_at": now_iso(), "error": None})

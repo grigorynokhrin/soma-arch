@@ -1,7 +1,7 @@
 [
   {
     "id": "cowon-iaudio-d2-plus",
-    "label": "Cowon iAudio D2+",
+    "label": "Cowon iAudio D2+ (AVI)",
     "container": "avi",
     "extension": "avi",
     "video": {
@@ -25,7 +25,7 @@
   },
   {
     "id": "lacie-ss-4x3-vob-pal",
-    "label": "LaCie SS 4:3",
+    "label": "LaCie SS 4:3 VOB PAL",
     "container": "vob",
     "extension": "vob",
     "video": {
@@ -55,7 +55,7 @@
   },
   {
     "id": "lacie-ss-16x9-vob-pal",
-    "label": "LaCie SS 16:9 PAL",
+    "label": "LaCie SS 16:9 VOB PAL",
     "container": "vob",
     "extension": "vob",
     "video": {
@@ -85,7 +85,7 @@
   },
   {
     "id": "lacie-ss-16x9-avi",
-    "label": "LaCie SS 16:9",
+    "label": "LaCie SS 16:9 (AVI)",
     "container": "avi",
     "extension": "avi",
     "video": {

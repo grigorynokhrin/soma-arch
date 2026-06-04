@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 import re
+import shlex
 from typing import Any
 
 ALLOWED_METADATA_KEYS = {"title", "artist", "date", "genre", "description"}
@@ -187,29 +188,10 @@ def subtitle_remux_action(stream: dict[str, Any]) -> str:
     return f"convert to {codec}"
 
 
-def quote_filter_path(path: Path) -> str:
-    value = str(path)
-    value = value.replace("\\", "\\\\").replace("'", "\\'")
-    return f"'{value}'"
-
-
-def selected_subtitle_for_burn(probe: dict[str, Any]) -> tuple[int, dict[str, Any]] | None:
-    subtitles = probe.get("subtitle_streams") or []
-    if not subtitles:
-        return None
-    for order, stream in enumerate(subtitles):
-        disposition = stream.get("disposition") or {}
-        if disposition.get("default"):
-            return order, stream
-    return 0, subtitles[0]
-
-
-def subtitle_warning(stream: dict[str, Any], profile_id: str, action: str) -> str:
+def subtitle_warning(stream: dict[str, Any], profile_id: str) -> str:
     index = stream.get("index")
     codec = subtitle_codec(stream) or "unknown"
-    if action == "burn":
-        return f"Subtitle stream #{index} codec {codec} was burned into video for profile {profile_id}."
-    return f"Subtitle stream #{index} codec {codec} was dropped; bitmap/OCR subtitle conversion is not supported."
+    return f"Subtitle stream #{index} codec {codec} was dropped because profile {profile_id} does not support subtitle preservation."
 
 
 def convert_subtitle_plan(
@@ -220,20 +202,18 @@ def convert_subtitle_plan(
 ) -> dict[str, Any]:
     profile_id = str(profile["id"])
     container = str(profile["container"])
-    selected = selected_subtitle_for_burn(probe)
-    if selected is None:
-        return {"maps": [], "video_filter_suffix": "", "warnings": []}
-
-    subtitle_order, stream = selected
-    codec = subtitle_codec(stream)
-    if container == "avi" and codec == "xsub":
-        return {"maps": ["-map", f"0:{stream['index']}"], "video_filter_suffix": "", "warnings": []}
-    if container == "vob" and codec == "dvd_subtitle":
-        return {"maps": ["-map", f"0:{stream['index']}"], "video_filter_suffix": "", "warnings": []}
-    if codec in TEXT_SUBTITLE_CODECS:
-        suffix = f",subtitles=filename={quote_filter_path(input_path)}:si={subtitle_order}"
-        return {"maps": [], "video_filter_suffix": suffix, "warnings": [subtitle_warning(stream, profile_id, "burn")]}
-    return {"maps": [], "video_filter_suffix": "", "warnings": [subtitle_warning(stream, profile_id, "drop")]}
+    maps: list[str] = []
+    warnings: list[str] = []
+    for stream in probe.get("subtitle_streams") or []:
+        codec = subtitle_codec(stream)
+        if container == "avi" and codec == "xsub":
+            maps += ["-map", f"0:{stream['index']}"]
+            continue
+        if container == "vob" and codec == "dvd_subtitle":
+            maps += ["-map", f"0:{stream['index']}"]
+            continue
+        warnings.append(subtitle_warning(stream, profile_id))
+    return {"maps": maps, "warnings": warnings}
 
 
 def build_remux_args(
@@ -304,15 +284,18 @@ def video_filter(profile: dict[str, Any], probe: dict[str, Any]) -> str:
     target_h = int(video["height"])
     target_aspect = aspect_value(video["display_aspect"])
     source = source_video_info(probe)
-    crop_wide = source["aspect"] > target_aspect
-
-    if video["crop_policy"] == "crop_sides_to_aspect" or crop_wide:
-        crop = f"crop='min(iw,ih*{target_aspect})':ih:(iw-ow)/2:0"
-        return f"{crop},scale={target_w}:{target_h},setsar=1"
-
-    scale = f"scale={target_w}:{target_h}:force_original_aspect_ratio=decrease"
-    pad = f"pad={target_w}:{target_h}:(ow-iw)/2:(oh-ih)/2"
-    return f"{scale},{pad},setsar=1"
+    filters: list[str] = []
+    if abs(source["aspect"] - target_aspect) > 0.01:
+        if source["aspect"] > target_aspect:
+            filters.append(f"crop='min(iw,ih*{target_aspect})':ih:(iw-ow)/2:0")
+        else:
+            filters.append(f"crop=iw:'min(ih,iw/{target_aspect})':0:(ih-oh)/2")
+    filters.append(f"scale={target_w}:{target_h}")
+    if profile["container"] == "vob":
+        filters.append(f"setdar={video['display_aspect']}")
+    else:
+        filters += ["setsar=1", f"setdar={video['display_aspect']}"]
+    return ",".join(filters)
 
 
 def output_fps(profile: dict[str, Any], probe: dict[str, Any]) -> float:
@@ -327,7 +310,7 @@ def build_convert_plan(input_path: Path, output_path: Path, profile: dict[str, A
     video = profile["video"]
     audio = profile["audio"]
     subtitle_plan = convert_subtitle_plan(input_path=input_path, profile=profile, probe=probe)
-    vf = video_filter(profile, probe) + subtitle_plan["video_filter_suffix"]
+    vf = video_filter(profile, probe)
     args = [
         "ffmpeg",
         "-y",
@@ -371,6 +354,17 @@ def build_convert_plan(input_path: Path, output_path: Path, profile: dict[str, A
         args += ["-f", "vob"]
     args.append(str(output_path))
     return {"args": args, "warnings": subtitle_plan["warnings"]}
+
+
+def build_runtime_convert_plan(original: str, input_path: Path, output_dir: Path, profile: dict[str, Any], probe: dict[str, Any]) -> dict[str, Any]:
+    output_path = output_dir / safe_output_filename(f"{Path(safe_filename_component(original, 'output')).stem}-{profile['id']}", f"output-{profile['id']}", profile["extension"])
+    plan = build_convert_plan(input_path, output_path, profile, probe)
+    return {
+        "output_path": output_path,
+        "args": plan["args"],
+        "command": shlex.join(plan["args"]),
+        "warnings": plan["warnings"],
+    }
 
 
 def build_convert_args(input_path: Path, output_path: Path, profile: dict[str, Any], probe: dict[str, Any]) -> list[str]:

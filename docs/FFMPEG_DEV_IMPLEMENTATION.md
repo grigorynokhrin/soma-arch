@@ -140,7 +140,7 @@ Completed, failed, or conversion jobs can still appear in the current-job summar
 
 Submit messages disable the clicked submit button and show a plain waiting message for probe, remux, and batch conversion. These are not true progress bars.
 
-Warnings such as subtitle burn-in/drop notices are rendered on the index current-job block and result/status pages.
+Warnings such as subtitle drop notices are rendered on the index current-job block and result/status pages.
 
 ## MP4 Remux Mode
 
@@ -229,6 +229,8 @@ Conversion maps:
 
 FFmpeg commands are generated from structured profile fields. There is no raw command input and no `shell=True`.
 
+Batch conversion records the exact generated FFmpeg command in `job.json` / `status.json` under `ffmpeg_commands` before the process starts. This is the runtime source of truth for debugging server-side conversion behavior.
+
 These v1 profiles are CPU encode profiles. They do not request NVENC, NVDEC, CUDA, or GPU device access.
 
 Batch profile subtitle policy:
@@ -236,10 +238,14 @@ Batch profile subtitle policy:
 - video/audio profile settings are unchanged
 - subtitles are not mapped blindly
 - compatible subtitle streams are preserved only when safe for the target container
-- text subtitles such as SubRip/SRT, ASS/SSA, WebVTT, and MOV text are burned into video for legacy AVI/VOB profiles
-- unsupported image subtitles are dropped with a warning instead of failing the job
+- subtitles are never burned into the video picture in batch conversion profiles
+- subtitles that cannot be preserved in the target container are dropped with a warning instead of failing the job
 
-This differs from MP4 remux mode, where text subtitles are represented as MP4 `mov_text` subtitle streams when possible.
+Drop warning format:
+
+    Subtitle stream #N codec X was dropped because profile Y does not support subtitle preservation.
+
+This differs from MP4 remux mode, where text subtitles are represented as MP4 `mov_text` subtitle streams when possible. The remux mode subtitle behavior is separate from batch conversion.
 
 ## Predefined Profiles
 
@@ -264,6 +270,8 @@ Output:
     4:3
     MP3 stereo 128 kbps
 
+Legacy-profile assumption: Cowon iAudio D2+ targets an AVI file because the device profile is MPEG-4 Part 2 / Xvid-style video with MP3 audio.
+
 ### LaCie SS 4:3
 
 Output:
@@ -274,6 +282,14 @@ Output:
     4:3
     PAL 25 fps
     AC3 stereo 192 kbps
+
+PAL display policy:
+
+    stored frame: 720x576
+    display aspect ratio: 4:3
+    square-pixel equivalent: 768x576
+    16:9 square-pixel sources are center-cropped to 4:3 visible image, then scaled to 720x576 and signaled as 4:3 PAL
+    no pad / no letterbox / no pillarbox
 
 ### LaCie SS 16:9 PAL
 
@@ -286,6 +302,14 @@ Output:
     PAL 25 fps
     AC3 448 kbps
 
+PAL display policy:
+
+    stored frame: 720x576
+    display aspect ratio: 16:9
+    square-pixel equivalent: 1024x576
+    16:9 square-pixel sources are scaled directly to stored 720x576 and signaled as 16:9 anamorphic PAL
+    no pad / no letterbox / no pillarbox
+
 ### LaCie SS 16:9
 
 Output:
@@ -296,6 +320,10 @@ Output:
     16:9 square pixels
     PAL 25 fps
     AC3 448 kbps
+
+Legacy-profile assumption: LaCie SS 16:9 AVI targets an AVI file because this profile is MPEG-4 Part 2 / Xvid-style video at square-pixel 1024x576.
+
+Root cause of the distorted PAL 16:9 VOB output was treating 720x576 as square-pixel geometry and using fit-with-pad behavior. PAL VOB 16:9 is anamorphic: 720x576 is storage size, while display geometry is carried by DAR/SAR signaling.
 
 ## LaCie Bitrate Assumption
 

@@ -1,14 +1,15 @@
 from __future__ import annotations
 
-from pathlib import Path
 import json
 import re
+from pathlib import Path
 
 from command_builder import (
     ALLOWED_METADATA_KEYS,
     IMAGE_SUBTITLE_ERROR,
     build_convert_args,
     build_convert_plan,
+    build_runtime_convert_plan,
     build_mp4_player_metadata_command,
     build_remux_args,
     decode_process_bytes,
@@ -73,6 +74,18 @@ def fake_probe(avg_frame_rate: str = "24000/1001", subtitle_codec: str | None = 
     return probe
 
 
+def fake_probe_size(width: int, height: int, display_aspect_ratio: str, subtitle_codec: str | None = None) -> dict:
+    probe = fake_probe(subtitle_codec=subtitle_codec)
+    probe["video_streams"][0].update(
+        {
+            "width": width,
+            "height": height,
+            "display_aspect_ratio": display_aspect_ratio,
+        }
+    )
+    return probe
+
+
 def value_after(args: list[str], key: str) -> str:
     try:
         return args[args.index(key) + 1]
@@ -95,6 +108,12 @@ def assert_video_filter(args: list[str], fragment: str) -> None:
     assert fragment in vf, f"{fragment!r} missing from filter: {vf}"
 
 
+def assert_no_burn_or_pad(args: list[str]) -> None:
+    vf = value_after(args, "-vf")
+    assert "subtitles=" not in vf, f"subtitle burn filter must not be used: {vf}"
+    assert "pad=" not in vf, f"padding/black bars must not be default behavior: {vf}"
+
+
 def assert_convert_shape(profile: dict, *, output_name: str, checks: dict[str, str], probe: dict | None = None) -> list[str]:
     args = build_convert_args(Path("input.mkv"), Path(output_name), profile, probe or fake_probe(subtitle_codec=None))
     assert args[0] == "ffmpeg"
@@ -106,6 +125,7 @@ def assert_convert_shape(profile: dict, *, output_name: str, checks: dict[str, s
     assert value_after(args, "-aspect") == checks["aspect"]
     assert value_after(args, "-r") == checks["fps"]
     assert_video_filter(args, checks["scale"])
+    assert_no_burn_or_pad(args)
     if checks.get("fourcc"):
         assert_contains(args, "-vtag", checks["fourcc"])
     if checks.get("format"):
@@ -119,15 +139,15 @@ def assert_no_subtitle_map(args: list[str]) -> None:
     assert "-c:s:0" not in args
 
 
-def assert_burn_plan(profile: dict, *, output_name: str, codec: str) -> dict:
+def assert_drop_plan(profile: dict, *, output_name: str, codec: str) -> dict:
     plan = build_convert_plan(Path("input path/clip, one & two (test).mkv"), Path(output_name), profile, fake_probe(subtitle_codec=codec))
     args = plan["args"]
-    vf = value_after(args, "-vf")
-    assert "subtitles=filename='input path/clip, one & two (test).mkv':si=0" in vf
+    assert_no_burn_or_pad(args)
     assert_no_subtitle_map(args)
-    assert plan["warnings"], "burn-in warning missing"
+    assert plan["warnings"], "drop warning missing"
     assert f"codec {codec}" in plan["warnings"][0]
-    assert "burned into video" in plan["warnings"][0]
+    assert "was dropped because profile" in plan["warnings"][0]
+    assert "does not support subtitle preservation" in plan["warnings"][0]
     return plan
 
 
@@ -179,7 +199,7 @@ def main() -> None:
 
     artifact = {"name": "ffmpeg-batch-subtitle-source-cowon-iaudio-d2-plus.avi"}
     assert artifact["name"] == "ffmpeg-batch-subtitle-source-cowon-iaudio-d2-plus.avi"
-    status_model = {"warnings": ["Subtitle stream #3 codec subrip was burned into video."]}
+    status_model = {"warnings": ["Subtitle stream #3 codec subrip was dropped because profile cowon-iaudio-d2-plus does not support subtitle preservation."]}
     assert status_model["warnings"][0].startswith("Subtitle stream")
 
     cowon = assert_convert_shape(
@@ -198,8 +218,11 @@ def main() -> None:
     assert value_after(cowon, "-b:v") == "900k"
     assert value_after(cowon, "-maxrate") == "1300k"
     assert float(value_after(cowon, "-r")) <= 30.0
+    assert_video_filter(cowon, "setsar=1")
+    assert_video_filter(cowon, "setdar=4:3")
+    assert "pad=" not in value_after(cowon, "-vf")
 
-    assert_convert_shape(
+    lacie_4x3 = assert_convert_shape(
         profiles["lacie-ss-4x3-vob-pal"],
         output_name="movie.vob",
         checks={
@@ -211,9 +234,16 @@ def main() -> None:
             "scale": "scale=720:576",
             "format": "vob",
         },
+        probe=fake_probe_size(1280, 720, "16:9", subtitle_codec=None),
     )
+    lacie_4x3_vf = value_after(lacie_4x3, "-vf")
+    assert "crop='min(iw,ih*1.3333333333333333)':ih:(iw-ow)/2:0" in lacie_4x3_vf
+    assert "scale=720:576" in lacie_4x3_vf
+    assert "setdar=4:3" in lacie_4x3_vf
+    assert "setsar=1" not in lacie_4x3_vf
+    assert "pad=" not in lacie_4x3_vf
 
-    assert_convert_shape(
+    lacie_16x9_vob = assert_convert_shape(
         profiles["lacie-ss-16x9-vob-pal"],
         output_name="movie.vob",
         checks={
@@ -225,9 +255,38 @@ def main() -> None:
             "scale": "scale=720:576",
             "format": "vob",
         },
+        probe=fake_probe_size(1280, 720, "16:9", subtitle_codec=None),
     )
+    lacie_16x9_vob_vf = value_after(lacie_16x9_vob, "-vf")
+    assert "crop=" not in lacie_16x9_vob_vf
+    assert "scale=720:576" in lacie_16x9_vob_vf
+    assert "setdar=16:9" in lacie_16x9_vob_vf
+    assert "setsar=1" not in lacie_16x9_vob_vf
+    assert "pad=" not in lacie_16x9_vob_vf
+    runtime_plan = build_runtime_convert_plan(
+        "2022 remuxed 1 2 3.mp4",
+        Path("/data/current/input/001-2022 remuxed 1 2 3.mp4"),
+        Path("/data/current/output"),
+        profiles["lacie-ss-16x9-vob-pal"],
+        fake_probe_size(1280, 720, "16:9", subtitle_codec="mov_text"),
+    )
+    runtime_args = runtime_plan["args"]
+    runtime_vf = value_after(runtime_args, "-vf")
+    assert runtime_plan["output_path"].name == "2022 remuxed 1 2 3-lacie-ss-16x9-vob-pal.vob"
+    assert "subtitles=" not in runtime_vf
+    assert "pad=" not in runtime_vf
+    assert "crop=" not in runtime_vf
+    assert runtime_vf == "scale=720:576,setdar=16:9"
+    assert "0:3" not in runtime_args
+    assert "-c:s" not in runtime_args
+    assert runtime_plan["warnings"] == [
+        "Subtitle stream #3 codec mov_text was dropped because profile lacie-ss-16x9-vob-pal does not support subtitle preservation."
+    ]
+    assert "burned" not in " ".join(runtime_plan["warnings"])
+    assert "subtitles=" not in runtime_plan["command"]
+    assert "pad=" not in runtime_plan["command"]
 
-    assert_convert_shape(
+    lacie_16x9_avi = assert_convert_shape(
         profiles["lacie-ss-16x9-avi"],
         output_name="movie.avi",
         checks={
@@ -239,18 +298,25 @@ def main() -> None:
             "scale": "scale=1024:576",
             "fourcc": "XVID",
         },
+        probe=fake_probe_size(1280, 720, "16:9", subtitle_codec=None),
     )
+    lacie_16x9_avi_vf = value_after(lacie_16x9_avi, "-vf")
+    assert "crop=" not in lacie_16x9_avi_vf
+    assert "scale=1024:576" in lacie_16x9_avi_vf
+    assert "setsar=1" in lacie_16x9_avi_vf
+    assert "setdar=16:9" in lacie_16x9_avi_vf
+    assert "pad=" not in lacie_16x9_avi_vf
 
     for profile_id, output_name in [
         ("cowon-iaudio-d2-plus", "movie.avi"),
         ("lacie-ss-16x9-avi", "movie.avi"),
         ("lacie-ss-4x3-vob-pal", "movie.vob"),
     ]:
-        burn = assert_burn_plan(profiles[profile_id], output_name=output_name, codec="mov_text")
-        assert value_after(burn["args"], "-c:v") == profiles[profile_id]["video"]["codec"]
-        assert value_after(burn["args"], "-c:a") == profiles[profile_id]["audio"]["codec"]
+        drop = assert_drop_plan(profiles[profile_id], output_name=output_name, codec="mov_text")
+        assert value_after(drop["args"], "-c:v") == profiles[profile_id]["video"]["codec"]
+        assert value_after(drop["args"], "-c:a") == profiles[profile_id]["audio"]["codec"]
 
-    cowon_subrip = assert_burn_plan(profiles["cowon-iaudio-d2-plus"], output_name="movie.avi", codec="subrip")
+    cowon_subrip = assert_drop_plan(profiles["cowon-iaudio-d2-plus"], output_name="movie.avi", codec="subrip")
     assert "0:3" not in cowon_subrip["args"]
 
     xsub_plan = build_convert_plan(Path("input.mkv"), Path("movie.avi"), profiles["cowon-iaudio-d2-plus"], fake_probe(subtitle_codec="xsub"))
@@ -268,6 +334,7 @@ def main() -> None:
     assert pgs_plan["warnings"]
     assert "was dropped" in pgs_plan["warnings"][0]
     assert "hdmv_pgs_subtitle" in pgs_plan["warnings"][0]
+    assert "does not support subtitle preservation" in pgs_plan["warnings"][0]
 
     remux = build_remux_args(
         input_path=Path("input.mkv"),

@@ -256,11 +256,18 @@ Legacy AVI/VOB profile conversions should not fail just because the input has su
 Expected behavior:
 
 - compatible subtitle streams are preserved only when safe for the target container
-- text subtitles are burned into video for legacy AVI/VOB profiles
-- unsupported image subtitles are dropped with a warning
+- subtitles are never burned into video for legacy AVI/VOB profiles
+- subtitles that cannot be preserved are dropped with a warning
 - video and audio profile codecs remain unchanged
 
-This is intentionally different from MP4 remux, where text subtitles become `mov_text` streams when possible.
+This is intentionally different from MP4 remux, where text subtitles become `mov_text` streams when possible. Batch conversion should not contain `subtitles=` video filters unless a future explicit burn-in feature is added.
+
+If runtime behavior differs from expectations, inspect `status.json` or `job.json` and check `ffmpeg_commands`. For `lacie-ss-16x9-vob-pal` with a 16:9 source and unsupported subtitle stream, the command should include `-vf scale=720:576,setdar=16:9` and should not include `subtitles=`, `pad=`, `crop=`, `0:3`, or `-c:s`.
+
+PAL VOB checks:
+
+- LaCie SS 4:3 VOB PAL: 720x576 storage, 25 fps, MPEG-2, DAR 4:3, center-crop 16:9 source to 4:3 visible image, no pad/black bars.
+- LaCie SS 16:9 VOB PAL: 720x576 storage, 25 fps, MPEG-2, DAR 16:9 anamorphic PAL, no crop for 16:9 source, no pad/black bars.
 
 ### Caddy Route Fails
 

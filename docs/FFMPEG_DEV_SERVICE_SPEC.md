@@ -101,7 +101,7 @@ Manual settings should include:
 - crop/scale mode
 - audio tracks to keep
 - subtitle tracks to keep
-- subtitle behavior: copy, burn-in later, drop, keep selected
+- subtitle behavior: copy, drop, keep selected
 - metadata handling
 - output filename stem
 
@@ -239,6 +239,7 @@ Recommended fields:
 - `params`
 - `metrics`
 - `warnings`
+- `ffmpeg_commands`
 - `links`
 
 Recommended stable statuses:
@@ -398,11 +399,23 @@ Batch legacy profile subtitle policy:
 - preserve compatible subtitle streams only when safe for the target container
 - for Cowon iAudio D2+ AVI and LaCie SS 16:9 AVI, `xsub` subtitles may be copied when safe
 - for LaCie VOB profiles, `dvd_subtitle` subtitles may be copied when safe
-- text subtitles such as `subrip`, `srt`, `ass`, `ssa`, `webvtt`, and `mov_text` should be burned into the transcoded video for legacy AVI/VOB profiles
-- unsupported image subtitles such as PGS should be dropped with a warning, not fail the whole batch job
-- selected subtitles must not be silently dropped; dropped or burned subtitles should be recorded in job warnings
+- no subtitles should be burned into the transcoded video for legacy AVI/VOB profiles
+- subtitles that cannot be preserved should be dropped with a warning, not fail the whole batch job
+- selected subtitles must not be silently dropped; dropped subtitles should be recorded in job warnings
 
-This differs from MP4 remux mode: MP4 remux keeps video/audio as stream copy and converts text subtitles to `mov_text` streams, while legacy batch profiles already transcode video and therefore burn text subtitles into video when needed.
+Warning format:
+
+    Subtitle stream #N codec X was dropped because profile Y does not support subtitle preservation.
+
+This differs from MP4 remux mode: MP4 remux keeps video/audio as stream copy and converts text subtitles to `mov_text` streams when needed. Batch conversion does not burn subtitles.
+
+Batch conversion should persist the exact runtime FFmpeg command in `ffmpeg_commands` before execution so runtime behavior can be audited from `status.json` and `job.json`.
+
+PAL VOB aspect policy:
+
+- LaCie SS 4:3 VOB PAL stores 720x576 MPEG-2 at 25 fps and signals DAR 4:3. A 16:9 square-pixel source is center-cropped to 4:3 visible geometry, then scaled to stored 720x576. No pad/letterbox/pillarbox is used.
+- LaCie SS 16:9 VOB PAL stores 720x576 MPEG-2 at 25 fps and signals DAR 16:9 anamorphic PAL. A 16:9 square-pixel source is scaled directly to stored 720x576. No crop, pad, letterbox, or pillarbox is used.
+- `720x576` is storage size, not square-pixel display geometry.
 
 ## Allowlists
 
@@ -534,7 +547,7 @@ Settings to confirm before implementation:
 - audio bitrate: unknown
 - fps: unknown
 - stream policy: first video plus one selected audio track
-- subtitles: likely `drop` or future burn-in
+- subtitles: likely `drop`
 
 Do not finalize this preset until the exact device constraints are known.
 
