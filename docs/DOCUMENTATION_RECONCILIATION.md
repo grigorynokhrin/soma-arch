@@ -59,6 +59,7 @@ No Markdown lint configuration or package script was found during this reconcili
 | `docs/JOB_SCHEMA.md` | CANONICAL | Shared job model and lifecycle expectations. | Source of truth for job schema unless replaced by a versioned schema doc later. |
 | `docs/RELEASES.md` | ACTIVE SUPPORTING | Monolithic release log for Whisper releases. | Current release history source until structured `docs/releases/` entries exist. |
 | `docs/runbooks/whisper.md` | CANONICAL | Stable Whisper operational runbook. | Source of truth for Whisper operations. |
+| `docs/services/whisper.md` | CANONICAL | Stable Whisper architecture and behavior design. | Source of truth for Whisper design; operations remain in `docs/runbooks/whisper.md`. |
 | `docs/WHISPER_RELEASE_MODEL.md` | ACTIVE SUPPORTING | Whisper dev-derived production release model. | Supports `docs/runbooks/whisper.md` and future `docs/services/whisper.md`. |
 | `docs/services/ffmpeg.md` | CANONICAL | Stable FFmpeg architecture and behavior design. | Source of truth for FFmpeg design; operations remain in `docs/runbooks/ffmpeg.md`. |
 | `docs/FFMPEG_DEV_IMPLEMENTATION.md` | ACTIVE SUPPORTING | FFmpeg implementation behavior and profile details. | Supports `docs/services/ffmpeg.md`. Operations now belong in `docs/runbooks/ffmpeg.md`. |
@@ -96,7 +97,7 @@ No Markdown lint configuration or package script was found during this reconcili
 | FFmpeg behavior/design | `docs/services/ffmpeg.md` | `docs/FFMPEG_DEV_SERVICE_SPEC.md`, `docs/FFMPEG_DEV_IMPLEMENTATION.md`, source selfchecks | `docs/runbooks/ffmpeg.md` should not become design spec |
 | FFmpeg dev rollout | `docs/FFMPEG_DEV_ROLLOUT_RUNBOOK.md` | `docs/runbooks/ffmpeg.md` for stable/dev split | Stable FFmpeg runbooks for dev-specific deployment |
 | Whisper operations | `docs/runbooks/whisper.md` | `docs/WHISPER_RELEASE_MODEL.md`, `docs/RELEASES.md`, Whisper validation docs | `docs/PROJECT_PHASE_1_STATUS.md`, `docs/CODEX_HANDOFF.md` |
-| Whisper behavior/design | future `docs/services/whisper.md` | `docs/WHISPER_RELEASE_MODEL.md`, `docs/JOB_SCHEMA.md`, `docs/WHISPER_DEV_BOOTSTRAP.md` | scattered phase/status docs |
+| Whisper behavior/design | `docs/services/whisper.md` | `docs/WHISPER_RELEASE_MODEL.md`, `docs/JOB_SCHEMA.md`, `docs/WHISPER_DEV_BOOTSTRAP.md` | scattered phase/status docs |
 | Home operations | future `docs/runbooks/home.md` | `docs/SERVICES_REGISTRY.md`, `docs/runbooks/ffmpeg.md`, `docs/FFMPEG_SERVICE_RUNBOOK.md` | `docs/CURRENT_STATE.md` and `docs/RUNTIME_STATUS.md` as current instructions |
 | Gateway/Caddy operations | future `docs/runbooks/gateway.md` | `gateway/myservices/Caddyfile.current`, `docs/CADDY_WHISPER_DEV_ROUTE.md`, FFmpeg runbook route sections | individual service rollout docs as global Caddy source |
 | Target architecture | `docs/TARGET_ARCHITECTURE.md` | `docs/SYSTEM_GOALS.md`, `docs/DECISIONS.md` | migration/status snapshots |
@@ -167,6 +168,7 @@ Whisper docs reviewed:
 Current state:
 
 - `docs/runbooks/whisper.md` is the canonical operational source.
+- `docs/services/whisper.md` is the canonical design source.
 - `docs/WHISPER_RELEASE_MODEL.md` remains the strongest supporting source for the dev-derived production release model.
 - `docs/RELEASES.md` owns release history and validation evidence for production promotions.
 - Dev bootstrap/smoke/retention docs are useful validation evidence, not current source of truth.
@@ -188,6 +190,7 @@ Current state:
 Recommended classification:
 
 - `docs/runbooks/whisper.md`: canonical.
+- `docs/services/whisper.md`: canonical.
 - `docs/WHISPER_RELEASE_MODEL.md`: active supporting.
 - `docs/RELEASES.md`: active supporting release history.
 - Whisper dev validation docs: reference.
@@ -243,6 +246,7 @@ Canonical:
 - `docs/runbooks/ffmpeg.md`
 - `docs/runbooks/whisper.md`
 - `docs/services/ffmpeg.md`
+- `docs/services/whisper.md`
 - `docs/DECISIONS.md`
 - `docs/TARGET_ARCHITECTURE.md`
 - `docs/SYSTEM_GOALS.md`
@@ -301,7 +305,6 @@ Priority 2, do soon:
 
 1. Create `docs/runbooks/gateway.md` from `gateway/myservices/Caddyfile.current`, `docs/CADDY_WHISPER_DEV_ROUTE.md`, and current FFmpeg route notes.
 2. Create `docs/runbooks/home.md` to document Home source ownership, publication rules, rebuild/restart/readiness, and validation.
-3. Create `docs/services/whisper.md` from Whisper release model and dev bootstrap docs.
 
 Priority 3, can wait:
 
@@ -328,4 +331,4 @@ Reason:
 - Gateway and Home still lack canonical operational runbooks even though they publish and route stable services.
 - Archive/deprecation cleanup should wait until Whisper/Home/Gateway canonical owners exist, otherwise useful facts may be buried before they are absorbed.
 
-After Gateway and Home runbooks, create `docs/services/whisper.md` so Whisper architecture has a canonical home separate from operations.
+After Gateway and Home runbooks, create Home and Gateway service design docs so routing and portal architecture have canonical homes separate from operations.
