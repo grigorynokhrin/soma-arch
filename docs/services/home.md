@@ -409,7 +409,7 @@ Potential future improvements:
 - Show version or release visibility for stable services if release documentation becomes structured.
 - Add validation reports for Home publication changes under `docs/validations/`.
 - Create ADRs if Home publication policy or route model changes materially.
-- Create `docs/services/gateway.md` so Gateway design and Home design remain separate.
+- Keep `docs/services/gateway.md` aligned with Home publication boundaries when the route model changes.
 
 Future work should preserve the current boundary: Home is product navigation, not service orchestration.
 

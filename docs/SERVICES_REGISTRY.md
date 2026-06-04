@@ -61,7 +61,7 @@ If duplication is unavoidable, mark one location as canonical.
 | FFmpeg | service | stable | server-stable | `/ffmpeg/` | `127.0.0.1:18083 -> 8000` | `soma-ffmpeg` | `ffmpeg` | Stable user-facing FFmpeg web tool | `docs/runbooks/ffmpeg.md`, `docs/services/ffmpeg.md` | Canonical runbook and service design now exist; legacy flat runbook remains as supporting history. |
 | FFmpeg dev | service | dev | server-dev | `/ffmpeg-dev/` | `127.0.0.1:18082 -> 8000` | `soma-ffmpeg-dev` | `ffmpeg-dev` | Experimental FFmpeg development and v2 work | `docs/FFMPEG_DEV_IMPLEMENTATION.md`, `docs/FFMPEG_DEV_ROLLOUT_RUNBOOK.md`, `docs/FFMPEG_DEV_SERVICE_SPEC.md` | Must not be published as Home user-facing entry. |
 | Home / MyServices | supporting component | stable | home | `/myservices/` | `8000` documented as container port | `myservices-home` | `home` | Publishes stable tools only | `docs/runbooks/home.md`, `docs/services/home.md`, `docs/RUNTIME_STATUS.md`, `docs/CURRENT_STATE.md`, `docs/FFMPEG_SERVICE_RUNBOOK.md` | Tracked Home source is not present in this repo; live source is under `/home/grigorynokhrin/myservices/home`. |
-| Caddy / Gateway | supporting component | maintenance | gateway | `/`, `/myservices/*`, `/ffmpeg*`, `/ffmpeg-dev*`, `/whisper-dev*` | host `:80`; upstreams use service port `8000` where documented | `myservices-caddy` | `caddy` | Routes Home and services | `docs/runbooks/gateway.md`, `gateway/myservices/Caddyfile.current`, `docs/CADDY_WHISPER_DEV_ROUTE.md`, `docs/FFMPEG_SERVICE_RUNBOOK.md` | Live Caddyfile may differ from tracked reference; inspect mounts before live changes. Dedicated service design doc missing. |
+| Caddy / Gateway | supporting component | maintenance | gateway | `/`, `/myservices/*`, `/ffmpeg*`, `/ffmpeg-dev*`, `/whisper-dev*` | host `:80`; upstreams use service port `8000` where documented | `myservices-caddy` | `caddy` | Routes Home and services | `docs/runbooks/gateway.md`, `docs/services/gateway.md`, `gateway/myservices/Caddyfile.current`, `docs/CADDY_WHISPER_DEV_ROUTE.md`, `docs/FFMPEG_SERVICE_RUNBOOK.md` | Live Caddyfile may differ from tracked reference; inspect mounts before live changes. |
 | image-upscale | service | deprecated | server-stable | `/myservices/image-upscale/` tracked route | `7860` upstream in tracked Caddyfile | `image-upscale` | TODO: not tracked in repo compose | Historical image upscaling service | `docs/CURRENT_STATE.md`, `docs/RUNTIME_STATUS.md` | Runtime status documented as exited/stopped in `docs/RUNTIME_STATUS.md`; not in current task's known stable service set. |
 | OCR placeholder | placeholder | prototype | gateway | `/myservices/ocr*` | none | none | none | Placeholder route only | `gateway/myservices/Caddyfile.current` | Caddy responds `OCR placeholder`; no service source/container tracked. |
 
@@ -433,7 +433,6 @@ Validation expectations:
 
 Known gaps / TODOs:
 
-- Create `docs/services/gateway.md`.
 - Live Caddyfile may differ from tracked reference.
 
 ## 7. Documentation Coverage Matrix
@@ -445,13 +444,11 @@ Known gaps / TODOs:
 | FFmpeg | Yes | Yes: `docs/services/ffmpeg.md` | Yes: `docs/runbooks/ffmpeg.md` | Partial: rollout docs, no structured release file | Partial: runbook and rollout evidence | Yes: disable notes in `docs/runbooks/ffmpeg.md` |
 | FFmpeg dev | Yes | Yes: `docs/FFMPEG_DEV_SERVICE_SPEC.md` | Yes: `docs/FFMPEG_DEV_ROLLOUT_RUNBOOK.md` | N/A | Partial: documented rollout validations | Yes: stop/cleanup in rollout runbook |
 | Home / MyServices | Yes | Yes: `docs/services/home.md` | Yes: `docs/runbooks/home.md` | N/A | Partial runtime status docs | Partial: disable notes in `docs/runbooks/home.md` |
-| Caddy / Gateway | Yes | Missing target doc | Yes: `docs/runbooks/gateway.md` | N/A | Partial route validation docs | Partial: reload/rollback notes in `docs/runbooks/gateway.md` |
+| Caddy / Gateway | Yes | Yes: `docs/services/gateway.md` | Yes: `docs/runbooks/gateway.md` | N/A | Partial route validation docs | Partial: reload/rollback notes in `docs/runbooks/gateway.md` |
 
 Expected missing docs:
 
-- `docs/services/gateway.md`
-
-Do not create those files as part of this registry task.
+- None for the current Home/Gateway/FFmpeg/Whisper canonical runbook and design set.
 
 ## 8. Operational Risk Notes
 
@@ -471,9 +468,9 @@ Do not create those files as part of this registry task.
 
 Recommended next documentation tasks:
 
-1. Create `docs/services/gateway.md`.
-2. Decide whether to split `docs/RELEASES.md` into structured `docs/releases/*.md` files.
-3. Decide whether to create structured validation reports under `docs/validations/`.
+1. Decide whether to split `docs/RELEASES.md` into structured `docs/releases/*.md` files.
+2. Decide whether to create structured validation reports under `docs/validations/`.
+3. Decide whether older flat rollout docs should receive supersession notices.
 
 ## 10. Links To Process Docs
 

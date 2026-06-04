@@ -62,6 +62,7 @@ No Markdown lint configuration or package script was found during this reconcili
 | `docs/runbooks/home.md` | CANONICAL | Home/MyServices operational runbook. | Source of truth for Home publication, rebuild/restart, validation, and diagnostics. |
 | `docs/runbooks/gateway.md` | CANONICAL | Gateway/Caddy operational runbook. | Source of truth for Gateway inspection, route validation, reload boundaries, and diagnostics. |
 | `docs/services/home.md` | CANONICAL | Home/MyServices architecture and behavior design. | Source of truth for Home purpose, publication model, navigation model, and boundaries. |
+| `docs/services/gateway.md` | CANONICAL | Gateway/Caddy architecture and behavior design. | Source of truth for Gateway purpose, routing model, upstream model, route lifecycle, and configuration ownership. |
 | `docs/services/whisper.md` | CANONICAL | Stable Whisper architecture and behavior design. | Source of truth for Whisper design; operations remain in `docs/runbooks/whisper.md`. |
 | `docs/WHISPER_RELEASE_MODEL.md` | ACTIVE SUPPORTING | Whisper dev-derived production release model. | Supports `docs/runbooks/whisper.md` and future `docs/services/whisper.md`. |
 | `docs/services/ffmpeg.md` | CANONICAL | Stable FFmpeg architecture and behavior design. | Source of truth for FFmpeg design; operations remain in `docs/runbooks/ffmpeg.md`. |
@@ -104,6 +105,7 @@ No Markdown lint configuration or package script was found during this reconcili
 | Home operations | `docs/runbooks/home.md` | `docs/SERVICES_REGISTRY.md`, `docs/runbooks/ffmpeg.md`, `docs/FFMPEG_SERVICE_RUNBOOK.md` | `docs/CURRENT_STATE.md` and `docs/RUNTIME_STATUS.md` as current instructions |
 | Home behavior/design | `docs/services/home.md` | `docs/runbooks/home.md`, `docs/SERVICES_REGISTRY.md`, `docs/FIRST_RELEASE_PLAYBOOK.md` | service runbooks as Home architecture docs |
 | Gateway/Caddy operations | `docs/runbooks/gateway.md` | `gateway/myservices/Caddyfile.current`, `docs/CADDY_WHISPER_DEV_ROUTE.md`, FFmpeg runbook route sections | individual service rollout docs as global Caddy source |
+| Gateway/Caddy behavior/design | `docs/services/gateway.md` | `docs/runbooks/gateway.md`, `gateway/myservices/Caddyfile.current`, `docs/SERVICES_REGISTRY.md` | service runbooks as global routing design docs |
 | Target architecture | `docs/TARGET_ARCHITECTURE.md` | `docs/SYSTEM_GOALS.md`, `docs/DECISIONS.md` | migration/status snapshots |
 | Runtime healthcheck behavior | `docs/RUNTIME_HEALTHCHECK.md` until platform runbook exists | `runtime/README.md`, `docs/RUNTIME_MAKEFILE.md` | service-specific release reports |
 | Release history | `docs/RELEASES.md` until structured release files exist | service runbooks and validation docs | phase status docs |
@@ -215,7 +217,7 @@ Gateway/Caddy:
 - The route reference includes `/myservices/whisper*`, `/whisper-dev*`, `/ffmpeg-dev*`, `/ffmpeg*`, `/myservices/ocr*`, and `/myservices*`.
 - `docs/CADDY_WHISPER_DEV_ROUTE.md` is a valuable route-change validation report, not a global Caddy runbook.
 - `docs/runbooks/gateway.md` is now the canonical Gateway/Caddy operational source.
-- Gateway behavior/design still needs future owner `docs/services/gateway.md`.
+- `docs/services/gateway.md` is now the canonical Gateway/Caddy behavior/design source.
 
 `docs/runbooks/gateway.md` absorbs:
 
@@ -255,6 +257,7 @@ Canonical:
 - `docs/services/ffmpeg.md`
 - `docs/services/whisper.md`
 - `docs/services/home.md`
+- `docs/services/gateway.md`
 - `docs/DECISIONS.md`
 - `docs/TARGET_ARCHITECTURE.md`
 - `docs/SYSTEM_GOALS.md`
@@ -311,7 +314,7 @@ Priority 1, before creating more docs:
 
 Priority 2, do soon:
 
-1. Create `docs/services/gateway.md` for Gateway behavior/design ownership.
+1. Add minimal links from older Gateway/route validation docs to `docs/runbooks/gateway.md` and `docs/services/gateway.md` where they currently read like current sources of truth.
 
 Priority 3, can wait:
 
@@ -325,11 +328,11 @@ Priority 3, can wait:
 
 Options evaluated:
 
-- Option A: Create Whisper runbook.
-- Option B: Create FFmpeg service design doc.
-- Option C: Perform archive/deprecation cleanup.
+- Option A: Perform archive/deprecation cleanup.
+- Option B: Split release notes into structured `docs/releases/` entries.
+- Option C: Create structured validation reports under `docs/validations/`.
 
-Recommended next step: create `docs/services/gateway.md`.
+Recommended next step: perform archive/deprecation cleanup.
 
 Reason:
 
@@ -337,7 +340,7 @@ Reason:
 - Whisper now has a canonical operational runbook.
 - Gateway now has a canonical operational runbook.
 - Home now has canonical operational and service design documents.
-- Gateway still lacks a service design document.
-- Archive/deprecation cleanup should wait until Whisper/Home/Gateway canonical owners exist, otherwise useful facts may be buried before they are absorbed.
+- Gateway now has a canonical service design document.
+- Archive/deprecation cleanup can proceed because FFmpeg, Whisper, Home, and Gateway now have canonical operational/design owners.
 
-Create the Gateway service design doc so routing architecture has a canonical home separate from operations.
+Add supersession notes and archive planning for legacy flat rollout/status docs before creating more service-specific documents.

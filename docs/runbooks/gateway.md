@@ -2,7 +2,7 @@
 
 This is the canonical operational runbook for the Gateway/Caddy component.
 
-It explains how to inspect, validate, diagnose, and safely maintain the routing layer used by Home/MyServices and service routes. It is not a service design document. Future Gateway architecture and route-design rationale belongs in `docs/services/gateway.md`.
+It explains how to inspect, validate, diagnose, and safely maintain the routing layer used by Home/MyServices and service routes. It is not a service design document. Gateway architecture and route-design rationale belongs in `docs/services/gateway.md`.
 
 ## Audit Sources
 
@@ -717,9 +717,9 @@ Discovered dependencies:
 - `docs/runbooks/ffmpeg.md`
 - `docs/runbooks/whisper.md`
 - `docs/CADDY_WHISPER_DEV_ROUTE.md`
+- `docs/services/gateway.md`
 - `gateway/myservices/Caddyfile.current`
 - `gateway/myservices/compose.override.caddy-soma-dev.yaml`
-- future `docs/services/gateway.md` TODO
 
 ## Known Gaps
 
@@ -729,5 +729,4 @@ Discovered dependencies:
 - It is not documented whether `gateway/myservices/compose.override.caddy-soma-dev.yaml` is active in the live compose project.
 - Exact Gateway readiness loop should be confirmed during the next approved Gateway task.
 - Exact current Gateway rollback command sequence is not documented.
-- Future Gateway service design document is missing: `docs/services/gateway.md`.
 - Structured Gateway validation reports under `docs/validations/` do not exist yet.
