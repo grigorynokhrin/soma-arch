@@ -12,6 +12,15 @@ After Caddy is reloaded with the repo route reference, `/ffmpeg-dev` is also ava
     http://127.0.0.1/ffmpeg-dev/healthz
     http://127.0.0.1/ffmpeg-dev/
 
+The stable service is separate:
+
+    route: /ffmpeg/
+    container: soma-ffmpeg
+    direct bind: 127.0.0.1:18083 -> 8000
+    data: /srv/soma/data/ffmpeg
+
+The dev service must not replace the stable Home entry. The official workflow is: develop in `ffmpeg-dev`, validate, promote to `ffmpeg`, and keep `ffmpeg` stable.
+
 ## Compose Safety
 
 The dev compose file has an explicit project name:
@@ -123,14 +132,20 @@ Expected route block:
         reverse_proxy soma-ffmpeg-dev:8000
     }
 
-This route should be placed near `/whisper-dev*` and before the `/myservices*` catch-all.
+Stable FFmpeg uses a separate route:
+
+    handle /ffmpeg* {
+        reverse_proxy soma-ffmpeg:8000
+    }
+
+The `/ffmpeg-dev*` route should be placed before `/ffmpeg*` and before the `/myservices*` catch-all.
 
 After reloading Caddy, check:
 
     curl -fsS http://127.0.0.1/ffmpeg-dev/healthz
     curl -fsS http://127.0.0.1/ffmpeg-dev/ | head
 
-The `/myservices/` home page button/link is not tracked in this repo. Adding a button there is a separate legacy-home task against the runtime home UI source.
+The live Home page button points to `FFmpeg -> /ffmpeg/`. The `/myservices/` Home source is not tracked in this repo; Home remains a legacy-runtime UI under `/home/grigorynokhrin/myservices`.
 
 ## CPU-Only V1 Policy
 

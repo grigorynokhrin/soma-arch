@@ -54,11 +54,11 @@ FastAPI routes are defined without hardcoding `/ffmpeg-dev`:
     GET  /job/result
     GET  /download/{artifact_name}
 
-Future production route, if promoted later:
+Stable service after promotion:
 
-    /myservices/ffmpeg
+    /ffmpeg
 
-That route is not added in this skeleton.
+The stable service is a sibling copy under `services/ffmpeg/` with compose file `compose/ffmpeg.compose.yml`. `soma-ffmpeg-dev` remains the experimental service for future v2 work.
 
 ## Caddy Dev Route
 
@@ -68,6 +68,14 @@ The repo reference Caddyfile includes a dev route:
         reverse_proxy soma-ffmpeg-dev:8000
     }
 
+The repo reference Caddyfile also records the stable route:
+
+    handle /ffmpeg* {
+        reverse_proxy soma-ffmpeg:8000
+    }
+
+Keep `/ffmpeg-dev*` before `/ffmpeg*` so the stable prefix does not shadow the dev route.
+
 The FFmpeg dev compose file persists membership in the external Docker network used by Caddy:
 
     compose_default
@@ -76,7 +84,16 @@ The service keeps its normal project network and also joins that external Caddy/
 
     soma-ffmpeg-dev
 
-The `/myservices/` home page button/link is not tracked in this repo. Adding a visible home-page entry for FFmpeg is a separate legacy-home task.
+The live Home page button points to `FFmpeg -> /ffmpeg/`. The Home UI source is not tracked in this repo; it remains part of the legacy runtime under `/home/grigorynokhrin/myservices`.
+
+## Promotion Workflow
+
+Official workflow:
+
+1. Develop and test changes in `ffmpeg-dev`.
+2. Validate direct bind and Caddy behavior.
+3. Promote the validated baseline into the stable `ffmpeg` service.
+4. Keep `ffmpeg` stable while `ffmpeg-dev` remains available for experiments.
 
 ## Runtime Data Layout
 

@@ -44,12 +44,47 @@ Direct local bind:
 
 The stable service is copied from the validated `ffmpeg-dev` baseline at commit `7cce8d8` and uses separate source, compose, container, image, route, and data paths.
 
+## Current Live State
+
+The stable FFmpeg service has been promoted and validated on the server.
+
+Live stable service:
+
+    route: /ffmpeg/
+    service name: ffmpeg
+    container: soma-ffmpeg
+    image: soma-ffmpeg:local
+    direct bind: 127.0.0.1:18083 -> 8000
+    data: /srv/soma/data/ffmpeg
+
+Live dev service remains separate:
+
+    route: /ffmpeg-dev/
+    container: soma-ffmpeg-dev
+    direct bind: 127.0.0.1:18082 -> 8000
+    data: /srv/soma/data/ffmpeg-dev
+
+Runtime validation passed:
+
+- `/ffmpeg/healthz` responded `ok`
+- `/ffmpeg/job/status.json` responded with service `ffmpeg`
+- Caddy route `/ffmpeg/` is active
+- Home page button is `FFmpeg -> /ffmpeg/`
+- `/ffmpeg-dev/` remains available for dev work
+
 ## Dev vs Stable
 
 - `ffmpeg-dev`: experimental service for future v2 changes, route `/ffmpeg-dev`, data `/srv/soma/data/ffmpeg-dev`.
 - `ffmpeg`: stable validated tool, route `/ffmpeg`, data `/srv/soma/data/ffmpeg`.
 
 Do not promote experimental `ffmpeg-dev` changes into `ffmpeg` without a separate validation and release step.
+
+Official lifecycle:
+
+1. Develop and test experimental changes in `ffmpeg-dev`.
+2. Validate through direct bind and Caddy route.
+3. Promote the validated baseline into `ffmpeg`.
+4. Keep `ffmpeg` stable while `ffmpeg-dev` remains available for future experiments.
 
 ## Build And Run
 
@@ -101,13 +136,27 @@ Expected service field:
 
 Do not modify live Caddy as part of this repo-only service promotion unless a separate task explicitly asks for it.
 
-Expected route block when the stable service is exposed through Caddy:
+Active route blocks:
+
+    handle /ffmpeg-dev* {
+        reverse_proxy soma-ffmpeg-dev:8000
+    }
 
     handle /ffmpeg* {
         reverse_proxy soma-ffmpeg:8000
     }
 
+Keep `/ffmpeg-dev*` before `/ffmpeg*` in route references so the stable `/ffmpeg*` prefix does not shadow the dev route.
+
 The stable service compose attaches `soma-ffmpeg` to the external Docker network `compose_default` with alias `soma-ffmpeg`, matching the route above.
+
+## Home Entry
+
+The live Home page button points to:
+
+    FFmpeg -> /ffmpeg/
+
+The stable Home entry should not be replaced by `/ffmpeg-dev/`. The Home UI source is not tracked in this repository; Home remains part of the legacy runtime under `/home/grigorynokhrin/myservices`.
 
 ## Smoke Test
 

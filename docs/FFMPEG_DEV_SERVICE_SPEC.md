@@ -6,6 +6,12 @@ This document specifies the proposed `soma-ffmpeg-dev` service for Phase 2.
 
 `soma-ffmpeg-dev` is a local/dev-first web UI and API service around FFmpeg.
 
+Post-promotion status:
+
+- `ffmpeg-dev` remains the experimental service for future v2 work.
+- `ffmpeg` is the stable validated service, route `/ffmpeg`, container `soma-ffmpeg`, direct bind `127.0.0.1:18083 -> 8000`, data `/srv/soma/data/ffmpeg`.
+- The live Home page entry points to `FFmpeg -> /ffmpeg/`; it should not point at `/ffmpeg-dev/`.
+
 It should help with:
 
 - inspecting media files with `ffprobe`
@@ -635,7 +641,17 @@ Suggested route:
 
     /ffmpeg-dev
 
-The initial skeleton should not edit Caddy. A Caddy dev route for `/ffmpeg-dev` can be added later only with explicit approval and rollback notes.
+The tracked Caddy reference now records both active routes:
+
+    handle /ffmpeg-dev* {
+        reverse_proxy soma-ffmpeg-dev:8000
+    }
+
+    handle /ffmpeg* {
+        reverse_proxy soma-ffmpeg:8000
+    }
+
+Keep the dev route before the stable route so `/ffmpeg-dev` remains separate from `/ffmpeg`.
 
 Initial skeleton document:
 

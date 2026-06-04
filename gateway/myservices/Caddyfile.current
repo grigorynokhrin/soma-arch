@@ -25,6 +25,10 @@
         reverse_proxy soma-ffmpeg-dev:8000
     }
 
+    handle /ffmpeg* {
+        reverse_proxy soma-ffmpeg:8000
+    }
+
     handle /myservices/ocr* {
         respond "OCR placeholder" 200
     }
