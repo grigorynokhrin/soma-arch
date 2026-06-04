@@ -43,7 +43,7 @@ No Markdown lint configuration or package script was found during this reconcili
 | --- | --- | --- | --- |
 | `README.md` | REFERENCE | Repository entry point. | Keep concise; should point to canonical workflow, architecture, registry, and runbooks. |
 | `compose/README.md` | REFERENCE | Directory note for compose files. | Useful local orientation; service inventory belongs in `docs/SERVICES_REGISTRY.md`. |
-| `gateway/README.md` | REFERENCE | Directory note for gateway references. | Gateway operations should eventually live in `docs/runbooks/gateway.md`. |
+| `gateway/README.md` | REFERENCE | Directory note for gateway references. | Gateway operations now live in `docs/runbooks/gateway.md`. |
 | `ops/README.md` | REFERENCE | Directory note for ops material. | Supporting orientation only. |
 | `runtime/README.md` | REFERENCE | Runtime root template orientation. | Overlaps with runtime policy and status docs; not operational source of truth. |
 | `scripts/README.md` | REFERENCE | Directory note for helper scripts. | Supporting orientation only. |
@@ -60,6 +60,7 @@ No Markdown lint configuration or package script was found during this reconcili
 | `docs/RELEASES.md` | ACTIVE SUPPORTING | Monolithic release log for Whisper releases. | Current release history source until structured `docs/releases/` entries exist. |
 | `docs/runbooks/whisper.md` | CANONICAL | Stable Whisper operational runbook. | Source of truth for Whisper operations. |
 | `docs/runbooks/home.md` | CANONICAL | Home/MyServices operational runbook. | Source of truth for Home publication, rebuild/restart, validation, and diagnostics. |
+| `docs/runbooks/gateway.md` | CANONICAL | Gateway/Caddy operational runbook. | Source of truth for Gateway inspection, route validation, reload boundaries, and diagnostics. |
 | `docs/services/whisper.md` | CANONICAL | Stable Whisper architecture and behavior design. | Source of truth for Whisper design; operations remain in `docs/runbooks/whisper.md`. |
 | `docs/WHISPER_RELEASE_MODEL.md` | ACTIVE SUPPORTING | Whisper dev-derived production release model. | Supports `docs/runbooks/whisper.md` and future `docs/services/whisper.md`. |
 | `docs/services/ffmpeg.md` | CANONICAL | Stable FFmpeg architecture and behavior design. | Source of truth for FFmpeg design; operations remain in `docs/runbooks/ffmpeg.md`. |
@@ -67,7 +68,7 @@ No Markdown lint configuration or package script was found during this reconcili
 | `docs/FFMPEG_DEV_SERVICE_SPEC.md` | ACTIVE SUPPORTING | FFmpeg dev service requirements and model. | Supports `docs/services/ffmpeg.md`; not an operations runbook. |
 | `docs/FFMPEG_DEV_ROLLOUT_RUNBOOK.md` | ACTIVE SUPPORTING | Dev-only FFmpeg rollout and troubleshooting. | Still active for `ffmpeg-dev`; stable operations belong in `docs/runbooks/ffmpeg.md`. |
 | `docs/FFMPEG_SERVICE_RUNBOOK.md` | LEGACY | First stable FFmpeg service runbook in flat docs layout. | Superseded by `docs/runbooks/ffmpeg.md`; keep until unique facts are confirmed migrated. |
-| `docs/CADDY_WHISPER_DEV_ROUTE.md` | ACTIVE SUPPORTING | First Whisper dev Caddy route validation and notes. | Supports future gateway runbook; not source of truth for all Caddy routes. |
+| `docs/CADDY_WHISPER_DEV_ROUTE.md` | ACTIVE SUPPORTING | First Whisper dev Caddy route validation and notes. | Supports `docs/runbooks/gateway.md`; not source of truth for all Caddy routes. |
 | `docs/RUNTIME_HEALTHCHECK.md` | ACTIVE SUPPORTING | Runtime healthcheck design and expected behavior. | Supports future gateway/home/platform runbooks; commands may be referenced by service runbooks. |
 | `docs/RUNTIME_MAKEFILE.md` | ACTIVE SUPPORTING | Runtime Makefile commands and safety notes. | Supports operational docs; not full platform inventory. |
 | `docs/WHISPER_DEV_BOOTSTRAP.md` | ACTIVE SUPPORTING | Whisper dev bootstrap and validation record. | Supports future Whisper runbook/service design doc. |
@@ -100,7 +101,7 @@ No Markdown lint configuration or package script was found during this reconcili
 | Whisper operations | `docs/runbooks/whisper.md` | `docs/WHISPER_RELEASE_MODEL.md`, `docs/RELEASES.md`, Whisper validation docs | `docs/PROJECT_PHASE_1_STATUS.md`, `docs/CODEX_HANDOFF.md` |
 | Whisper behavior/design | `docs/services/whisper.md` | `docs/WHISPER_RELEASE_MODEL.md`, `docs/JOB_SCHEMA.md`, `docs/WHISPER_DEV_BOOTSTRAP.md` | scattered phase/status docs |
 | Home operations | `docs/runbooks/home.md` | `docs/SERVICES_REGISTRY.md`, `docs/runbooks/ffmpeg.md`, `docs/FFMPEG_SERVICE_RUNBOOK.md` | `docs/CURRENT_STATE.md` and `docs/RUNTIME_STATUS.md` as current instructions |
-| Gateway/Caddy operations | future `docs/runbooks/gateway.md` | `gateway/myservices/Caddyfile.current`, `docs/CADDY_WHISPER_DEV_ROUTE.md`, FFmpeg runbook route sections | individual service rollout docs as global Caddy source |
+| Gateway/Caddy operations | `docs/runbooks/gateway.md` | `gateway/myservices/Caddyfile.current`, `docs/CADDY_WHISPER_DEV_ROUTE.md`, FFmpeg runbook route sections | individual service rollout docs as global Caddy source |
 | Target architecture | `docs/TARGET_ARCHITECTURE.md` | `docs/SYSTEM_GOALS.md`, `docs/DECISIONS.md` | migration/status snapshots |
 | Runtime healthcheck behavior | `docs/RUNTIME_HEALTHCHECK.md` until platform runbook exists | `runtime/README.md`, `docs/RUNTIME_MAKEFILE.md` | service-specific release reports |
 | Release history | `docs/RELEASES.md` until structured release files exist | service runbooks and validation docs | phase status docs |
@@ -211,9 +212,10 @@ Gateway/Caddy:
 - Tracked Caddy reference config exists at `gateway/myservices/Caddyfile.current`.
 - The route reference includes `/myservices/whisper*`, `/whisper-dev*`, `/ffmpeg-dev*`, `/ffmpeg*`, `/myservices/ocr*`, and `/myservices*`.
 - `docs/CADDY_WHISPER_DEV_ROUTE.md` is a valuable route-change validation report, not a global Caddy runbook.
-- Future owner should be `docs/runbooks/gateway.md`.
+- `docs/runbooks/gateway.md` is now the canonical Gateway/Caddy operational source.
+- Gateway behavior/design still needs future owner `docs/services/gateway.md`.
 
-Gateway runbook should absorb:
+`docs/runbooks/gateway.md` absorbs:
 
 - live Caddyfile path and mount-check procedure
 - tracked vs live config distinction
@@ -232,7 +234,7 @@ Gateway runbook should absorb:
 | FFmpeg behavior and profile policy | `docs/FFMPEG_DEV_IMPLEMENTATION.md`, `docs/FFMPEG_DEV_SERVICE_SPEC.md`, `docs/runbooks/ffmpeg.md` | future `docs/services/ffmpeg.md` | Merge behavior into service design doc later; keep runbook focused on operations. |
 | Whisper release/promotion flow | `docs/WHISPER_RELEASE_MODEL.md`, `docs/RELEASES.md`, `docs/PROJECT_PHASE_1_STATUS.md` | future `docs/runbooks/whisper.md`; `docs/RELEASES.md` for release history | Create Whisper runbook before adding more Whisper operational docs. |
 | Runtime topology and paths | `docs/SERVICES_REGISTRY.md`, `docs/CURRENT_STATE.md`, `docs/RUNTIME_STATUS.md`, `docs/REPO_LOCATIONS.md`, `docs/PROJECT_PHASE_1_STATUS.md` | `docs/SERVICES_REGISTRY.md` | Keep registry current; archive old snapshots after unique facts are migrated. |
-| Gateway route procedure | `docs/CADDY_WHISPER_DEV_ROUTE.md`, `docs/runbooks/ffmpeg.md`, `docs/FFMPEG_DEV_ROLLOUT_RUNBOOK.md`, `gateway/myservices/Caddyfile.current` | future `docs/runbooks/gateway.md` | Create gateway runbook before more route-specific operational docs. |
+| Gateway route procedure | `docs/CADDY_WHISPER_DEV_ROUTE.md`, `docs/runbooks/ffmpeg.md`, `docs/FFMPEG_DEV_ROLLOUT_RUNBOOK.md`, `gateway/myservices/Caddyfile.current` | `docs/runbooks/gateway.md` | Keep service runbooks focused on service-specific checks and link to Gateway runbook for global Caddy operations. |
 | Validation evidence | `docs/WHISPER_DEV_SMOKE_TEST.md`, `docs/WHISPER_DEV_RETENTION_TEST.md`, `docs/RELEASES.md`, `docs/runbooks/ffmpeg.md` | future `docs/validations/` for detailed evidence; runbooks for scenario checklist only | Reference existing evidence; move future reports to structured validations. |
 | Historical phase status | `docs/PROJECT_PHASE_1_STATUS.md`, `docs/BOOTSTRAP_STATUS.md`, `docs/SRV_SOMA_SKELETON.md`, `docs/PHASE_2_PLAN.md` | no current owner; historical archive | Archive after the registry/runbooks cover current facts. |
 
@@ -247,6 +249,7 @@ Canonical:
 - `docs/runbooks/ffmpeg.md`
 - `docs/runbooks/whisper.md`
 - `docs/runbooks/home.md`
+- `docs/runbooks/gateway.md`
 - `docs/services/ffmpeg.md`
 - `docs/services/whisper.md`
 - `docs/DECISIONS.md`
@@ -305,8 +308,8 @@ Priority 1, before creating more docs:
 
 Priority 2, do soon:
 
-1. Create `docs/runbooks/gateway.md` from `gateway/myservices/Caddyfile.current`, `docs/CADDY_WHISPER_DEV_ROUTE.md`, and current FFmpeg route notes.
-2. Create `docs/services/home.md` for Home behavior/design ownership.
+1. Create `docs/services/home.md` for Home behavior/design ownership.
+2. Create `docs/services/gateway.md` for Gateway behavior/design ownership.
 
 Priority 3, can wait:
 
@@ -324,14 +327,15 @@ Options evaluated:
 - Option B: Create FFmpeg service design doc.
 - Option C: Perform archive/deprecation cleanup.
 
-Recommended next step: create `docs/runbooks/gateway.md`.
+Recommended next step: create `docs/services/home.md` or `docs/services/gateway.md`.
 
 Reason:
 
 - FFmpeg now has a canonical operational runbook.
 - Whisper now has a canonical operational runbook.
-- Gateway still lacks a canonical operational runbook even though it routes stable services.
+- Gateway now has a canonical operational runbook.
 - Home now has a canonical operational runbook, but still lacks a service design document.
+- Gateway still lacks a service design document.
 - Archive/deprecation cleanup should wait until Whisper/Home/Gateway canonical owners exist, otherwise useful facts may be buried before they are absorbed.
 
-After the Gateway runbook, create Home and Gateway service design docs so routing and portal architecture have canonical homes separate from operations.
+Create Home and Gateway service design docs so routing and portal architecture have canonical homes separate from operations.
