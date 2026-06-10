@@ -55,11 +55,14 @@ Documentation foundation completed:
 
 Key ownership:
 
+- `docs/PLATFORM_ARCHITECTURE.md` owns platform identity, roots, and high-level ownership boundaries.
+- `docs/NAMING_AND_LAYOUT_POLICY.md` owns platform naming and filesystem layout policy.
 - `docs/SERVICES_REGISTRY.md` owns service inventory.
 - `docs/runbooks/*.md` own operational procedures.
 - `docs/services/*.md` own service design and behavior.
 - Home is publication.
 - Gateway/Caddy is routing.
+- Worktrees are temporary Git checkouts for branches or tasks; they are not architecture.
 
 ## 6. Current Services/Topology Summary
 

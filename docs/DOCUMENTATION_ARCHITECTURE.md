@@ -56,10 +56,12 @@ Own:
 Canonical document:
 
     docs/PLATFORM_ARCHITECTURE.md
+    docs/NAMING_AND_LAYOUT_POLICY.md
 
 Owns:
 
 - platform identity and vocabulary
+- platform naming and filesystem layout policy
 - control-plane vs runtime boundaries
 - target, current, and legacy root meanings
 - high-level repository directory ownership
@@ -220,6 +222,7 @@ Target structure:
       ENGINEERING_WORKFLOW.md
       DOCUMENTATION_ARCHITECTURE.md
       PLATFORM_ARCHITECTURE.md
+      NAMING_AND_LAYOUT_POLICY.md
       FIRST_RELEASE_PLAYBOOK.md
       SERVICES_REGISTRY.md
 
@@ -265,6 +268,7 @@ Each documentation type has one canonical responsibility:
 - `docs/FIRST_RELEASE_PLAYBOOK.md` owns the first dev-to-stable release process.
 - `docs/DOCUMENTATION_ARCHITECTURE.md` owns documentation structure.
 - `docs/PLATFORM_ARCHITECTURE.md` owns platform identity, roots, and high-level ownership boundaries.
+- `docs/NAMING_AND_LAYOUT_POLICY.md` owns platform naming and filesystem layout policy.
 - `docs/SERVICES_REGISTRY.md` owns service inventory.
 - `docs/runbooks/*.md` own operational commands.
 - `docs/services/*.md` own service architecture and behavior.
