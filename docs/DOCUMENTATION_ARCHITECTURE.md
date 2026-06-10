@@ -183,6 +183,21 @@ Own:
 - validation plan
 - closeout references
 
+### Supporting Bootstrap Context
+
+Current bootstrap context:
+
+    docs/CHATGPT_CONTEXT.md
+
+Owns:
+
+- short paste-safe context for starting a new ChatGPT conversation
+- current phase and high-level topology orientation
+- pointers to canonical docs
+- reminder that volatile repo/server facts must be refreshed before runtime work
+
+This file is not a runbook, service design document, release note, or validation report. It should stay concise and defer to canonical docs.
+
 ## 3. Directory Structure
 
 Target structure:
@@ -223,6 +238,8 @@ Target structure:
       workflows/
         YYYY-MM-DD__service__change-slug__brief.md
 
+      CHATGPT_CONTEXT.md
+
 The current repository still contains legacy flat docs. Migration into the target structure should be incremental and should not obscure existing release or validation history.
 
 ## 4. Source Of Truth Rules
@@ -239,6 +256,7 @@ Each documentation type has one canonical responsibility:
 - `docs/validations/*.md` own validation evidence.
 - `docs/decisions/*.md` own architectural decisions.
 - `docs/workflows/*.md` own task briefs and task records.
+- `docs/CHATGPT_CONTEXT.md` owns short paste-safe ChatGPT bootstrap context.
 
 Avoid duplication:
 
