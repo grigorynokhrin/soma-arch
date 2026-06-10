@@ -1,0 +1,53 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Cockpit: Help",
+      "type": "shell",
+      "command": "make cockpit",
+      "problemMatcher": []
+    },
+    {
+      "label": "Cockpit: Local Status",
+      "type": "shell",
+      "command": "make status",
+      "problemMatcher": []
+    },
+    {
+      "label": "Cockpit: ChatGPT Context",
+      "type": "shell",
+      "command": "make context",
+      "problemMatcher": []
+    },
+    {
+      "label": "Cockpit: Git Check",
+      "type": "shell",
+      "command": "make git-check",
+      "problemMatcher": []
+    },
+    {
+      "label": "Cockpit: Local Validate",
+      "type": "shell",
+      "command": "make local-validate",
+      "problemMatcher": []
+    },
+    {
+      "label": "Cockpit: FFmpeg Selfcheck",
+      "type": "shell",
+      "command": "make local-validate-ffmpeg",
+      "problemMatcher": []
+    },
+    {
+      "label": "Cockpit: Compose Config",
+      "type": "shell",
+      "command": "make local-validate-compose",
+      "problemMatcher": []
+    },
+    {
+      "label": "Cockpit: Print Server Commands",
+      "type": "shell",
+      "command": "make server-commands",
+      "problemMatcher": []
+    }
+  ]
+}
