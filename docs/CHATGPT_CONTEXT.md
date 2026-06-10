@@ -63,6 +63,8 @@ Key ownership:
 - Home is publication.
 - Gateway/Caddy is routing.
 - Worktrees are temporary Git checkouts for branches or tasks; they are not architecture.
+- `docs/reports/live_server_layout_audit.md` records observed live server layout facts.
+- Multiple compose ownership models currently coexist on the server.
 
 ## 6. Current Services/Topology Summary
 
@@ -98,6 +100,7 @@ The documentation foundation is in place. The next work should use the canonical
 - Add supersession/archive notes for older flat rollout/status docs when cleanup begins.
 - Refresh server live state before any runtime, Caddy, Home, or stable-service action.
 - Keep Gateway/Caddy route changes separate from service implementation work unless explicitly approved.
+- Use the live server layout audit as a factual baseline before discussing cleanup or migration.
 
 ## 10. How To Use This File In A New ChatGPT Chat
 
