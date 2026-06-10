@@ -29,7 +29,7 @@ Volatile facts must be refreshed from the repository and, before any runtime wor
 
 - Active branch: `feature/ffmpeg-dev-skeleton`
 - Server worktree for this branch: `/srv/soma/worktrees/ffmpeg-dev-skeleton`
-- Latest known server HEAD: `0714bcb docs(gateway): add service design document`
+- Latest known server HEAD: `4ab65a3 chore(cockpit): add safe local developer commands`
 - Current phase: Developer Cockpit
 - Mac workspace: `/Users/grigorynokhrin/projects/soma-arch`
 - Server canonical repo path historically used for stable workflow: `/home/grigorynokhrin/soma-arch`
@@ -91,11 +91,20 @@ Live service state, ports, routes, images, networks, and mounts must be refreshe
 
 Current phase: Developer Cockpit.
 
-The documentation foundation is in place. The next work should use the canonical docs instead of creating competing runbooks or design documents.
+Developer Cockpit v1 is implemented as safe local commands in the root `Makefile`, with VS Code tasks in `.vscode/tasks.json`.
+
+Useful local cockpit commands:
+
+- `make cockpit`
+- `make status`
+- `make context`
+- `make local-validate`
+- `make server-commands`
+
+The documentation foundation is in place. The next work should use the canonical docs and cockpit commands instead of creating competing runbooks or copying command blocks by hand.
 
 ## 9. Open Follow-Up Items
 
-- Build Developer Cockpit scope and implementation plan.
 - Keep structured release notes and validation reports under consideration.
 - Add supersession/archive notes for older flat rollout/status docs when cleanup begins.
 - Refresh server live state before any runtime, Caddy, Home, or stable-service action.
