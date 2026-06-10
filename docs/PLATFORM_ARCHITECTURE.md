@@ -19,7 +19,43 @@ The purpose of this document is to define the platform vocabulary and ownership 
 
 Use this document for architecture identity. Use `docs/SERVICES_REGISTRY.md` for current inventory, service runbooks for operations, and service design docs for service behavior.
 
-## 2. Platform Identity
+## 2. Quick Platform Map
+
+```text
+Soma platform
+├── Control plane
+│   └── soma-arch repo
+│       ├── docs/
+│       ├── services/
+│       ├── compose/
+│       ├── gateway/
+│       └── runtime/
+├── Target runtime
+│   └── /srv/soma
+│       ├── data/
+│       ├── services/
+│       ├── worktrees/
+│       ├── backups/
+│       └── ops/
+└── Legacy runtime
+    └── /home/grigorynokhrin/myservices
+        ├── home
+        ├── whisper
+        └── caddy
+```
+
+Current ownership snapshot:
+
+| Area | Current ownership |
+| --- | --- |
+| FFmpeg stable/dev | Repo-managed; running from current feature worktree compose; data under `/srv/soma/data`. |
+| Whisper stable | Legacy `myservices` contour. |
+| Whisper dev | Mixed/server-local `/srv/soma` compose ownership. |
+| Home | Legacy `myservices` contour. |
+| Gateway/Caddy | Legacy `myservices` contour with tracked reference config in this repo. |
+| Supir/Tesseract | Placeholders/prototypes; not active stable services unless separately promoted. |
+
+## 3. Platform Identity
 
 `soma` is the platform/product identity for the home-server service environment.
 
@@ -35,7 +71,7 @@ It refers to the intended platform as a whole:
 
 `soma` is not a single container, service, route, or directory.
 
-## 3. Control Plane
+## 4. Control Plane
 
 `soma-arch` is the Git control-plane repository.
 
@@ -57,7 +93,7 @@ Known workspace paths:
 
 The control plane is not the same thing as the runtime. A committed repository change does not affect live services until the server pulls, builds/restarts where needed, waits for readiness, and validates runtime behavior.
 
-## 4. Target Runtime Roots
+## 5. Target Runtime Roots
 
 `/srv/soma` is the target server runtime root for the `soma` platform.
 
@@ -81,7 +117,7 @@ Current known example:
 
 This path is documented as the server worktree for branch `feature/ffmpeg-dev-skeleton`; its current live HEAD requires server confirmation.
 
-## 5. Legacy Runtime Contour
+## 6. Legacy Runtime Contour
 
 `/home/grigorynokhrin/myservices` is the legacy runtime contour.
 
@@ -101,7 +137,7 @@ Documented legacy ownership includes:
 
 Do not delete, rename, move, or replace this contour without explicit approval, a documented migration plan, and rollback path.
 
-## 6. Repository Directory Ownership
+## 7. Repository Directory Ownership
 
 The repository directory model is:
 
@@ -124,7 +160,7 @@ Directory boundaries:
 - `gateway/` stores reference configuration; it is not proof of live Caddy state.
 - `runtime/` stores templates/helpers, not the live `/srv/soma` filesystem itself.
 
-## 7. Documentation Ownership
+## 8. Documentation Ownership
 
 Canonical documentation responsibilities:
 
@@ -140,7 +176,7 @@ Canonical documentation responsibilities:
 | `docs/CHATGPT_CONTEXT.md` | Short paste-safe bootstrap context for new ChatGPT conversations. |
 | `docs/reports/*.md` | Audit/report outputs. |
 
-## 8. Current State
+## 9. Current State
 
 Current state is mixed:
 
@@ -154,7 +190,7 @@ Current state is mixed:
 
 The latest local filesystem audit could not directly observe `/home/grigorynokhrin`, `/srv`, or Docker because it was run from the Mac workspace. Treat server runtime facts as needing live confirmation.
 
-## 9. Target State
+## 10. Target State
 
 Target architecture direction:
 
@@ -170,7 +206,7 @@ Target architecture direction:
 
 Long-term target details are documented in `docs/TARGET_ARCHITECTURE.md`.
 
-## 10. Legacy State
+## 11. Legacy State
 
 Legacy state includes:
 
@@ -183,7 +219,7 @@ Legacy state includes:
 
 Legacy does not mean disposable. It means production-sensitive historical runtime state that must be preserved until an explicit migration replaces it.
 
-## 11. Home And Gateway Boundaries
+## 12. Home And Gateway Boundaries
 
 Home is publication.
 
@@ -199,7 +235,7 @@ Gateway/Caddy is routing.
 
 `docs/services/home.md` owns Home design. `docs/services/gateway.md` owns Gateway design.
 
-## 12. Open Questions
+## 13. Open Questions
 
 Open platform questions:
 
@@ -213,7 +249,7 @@ Open platform questions:
 
 These questions require explicit decisions before restructuring.
 
-## 13. Non-Goals
+## 14. Non-Goals
 
 This document does not:
 
@@ -226,7 +262,7 @@ This document does not:
 - prescribe a migration plan
 - recommend cleanup or restructuring by itself
 
-## 14. Related Documents
+## 15. Related Documents
 
 - `docs/TARGET_ARCHITECTURE.md`
 - `docs/ENGINEERING_WORKFLOW.md`

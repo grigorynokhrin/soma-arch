@@ -4,6 +4,25 @@ This document defines naming and filesystem layout policy for the Soma platform.
 
 It exists to prevent branch names, worktree paths, runtime paths, product names, and legacy names from being mistaken for each other. It does not authorize cleanup, migration, renaming, container changes, route changes, or runtime restructuring.
 
+## Identity Separation Map
+
+```text
+Product identity:
+  Soma
+
+Control plane:
+  soma-arch
+
+Runtime roots:
+  /srv/soma
+  /home/grigorynokhrin/myservices  legacy
+
+Operational checkouts:
+  /srv/soma/worktrees/<branch-or-purpose>
+```
+
+Worktree paths must never be read as product or architecture identity. Branch names must not define platform vocabulary.
+
 ## 1. Core Principles
 
 - Worktrees are not architecture.

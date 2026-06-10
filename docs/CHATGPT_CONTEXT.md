@@ -8,6 +8,20 @@ It is safe to paste into a new chat. It intentionally contains only current proj
 
 Volatile facts must be refreshed from the repository and, before any runtime work, from the server. Treat this file as orientation, not as proof of live state.
 
+## At-A-Glance Map
+
+```text
+Soma = platform
+soma-arch = Git/control-plane repo
+/srv/soma = target runtime root
+/home/grigorynokhrin/myservices = legacy runtime contour
+/srv/soma/worktrees/* = operational Git checkouts, not architecture
+Whisper + FFmpeg = active/mature services
+Supir + Tesseract = placeholders/prototypes
+Home = publication
+Gateway/Caddy = routing
+```
+
 ## 2. Roles
 
 - Human owner: defines goals, approves production-sensitive work, approves stable releases, Gateway/Caddy changes, and Home publication changes.
