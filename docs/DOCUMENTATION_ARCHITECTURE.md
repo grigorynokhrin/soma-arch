@@ -51,6 +51,20 @@ Own:
 - step-by-step release/deploy/rollback flows
 - command sequences that apply to a class of work
 
+### Platform Architecture
+
+Canonical document:
+
+    docs/PLATFORM_ARCHITECTURE.md
+
+Owns:
+
+- platform identity and vocabulary
+- control-plane vs runtime boundaries
+- target, current, and legacy root meanings
+- high-level repository directory ownership
+- relationship between Home publication and Gateway/Caddy routing
+
 ### Level 3: Service Registry
 
 Target document:
@@ -205,6 +219,7 @@ Target structure:
     docs/
       ENGINEERING_WORKFLOW.md
       DOCUMENTATION_ARCHITECTURE.md
+      PLATFORM_ARCHITECTURE.md
       FIRST_RELEASE_PLAYBOOK.md
       SERVICES_REGISTRY.md
 
@@ -249,6 +264,7 @@ Each documentation type has one canonical responsibility:
 - `docs/ENGINEERING_WORKFLOW.md` owns global process rules.
 - `docs/FIRST_RELEASE_PLAYBOOK.md` owns the first dev-to-stable release process.
 - `docs/DOCUMENTATION_ARCHITECTURE.md` owns documentation structure.
+- `docs/PLATFORM_ARCHITECTURE.md` owns platform identity, roots, and high-level ownership boundaries.
 - `docs/SERVICES_REGISTRY.md` owns service inventory.
 - `docs/runbooks/*.md` own operational commands.
 - `docs/services/*.md` own service architecture and behavior.
